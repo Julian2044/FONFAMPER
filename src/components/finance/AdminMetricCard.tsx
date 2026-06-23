@@ -20,16 +20,16 @@ const tones = {
 
 export function AdminMetricCard({ title, value, helper, trend, icon: Icon, tone = "blue" }: AdminMetricCardProps) {
   return (
-    <Card className="min-h-40">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <Card className="min-h-[178px]">
+      <div className="flex min-w-0 items-start gap-4">
+        <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-full", tones[tone])}>
+          <Icon className="h-6 w-6" />
+        </div>
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-slate-500">{title}</p>
-          <p className="mt-3 text-3xl font-extrabold tracking-normal text-slate-950">{value}</p>
+          <p className="mt-3 whitespace-nowrap text-[24px] font-extrabold leading-none tracking-tight text-slate-950 sm:text-[30px]">{value}</p>
           <p className="mt-2 text-sm text-slate-500">{helper}</p>
           {trend ? <p className="mt-3 text-xs font-bold text-emerald-700">{trend}</p> : null}
-        </div>
-        <div className={cn("rounded-2xl p-3", tones[tone])}>
-          <Icon className="h-5 w-5" />
         </div>
       </div>
     </Card>

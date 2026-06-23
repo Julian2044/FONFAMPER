@@ -22,13 +22,13 @@ const data = [
 
 export function MonthlyActivityChart() {
   return (
-    <Card className="min-h-[420px] p-6">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-        <div>
+    <Card className="min-h-[420px] p-5 sm:p-6">
+      <div className="flex min-w-0 flex-col justify-between gap-4 sm:flex-row sm:items-start">
+        <div className="min-w-0">
           <h3 className="text-lg font-extrabold text-slate-950">Actividad mensual</h3>
           <p className="mt-1 text-sm text-slate-500">Aportes registrados por mes.</p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <button type="button" className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-extrabold text-[#0057d9]">
             Este año
           </button>
@@ -38,19 +38,19 @@ export function MonthlyActivityChart() {
         </div>
       </div>
 
-      <div className="mt-8 h-[300px] min-w-0">
+      <div className="mt-6 h-[280px] min-w-0 sm:mt-8 sm:h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ left: 0, right: 12, top: 12, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-          <XAxis dataKey="month" tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
-          <YAxis width={58} tickFormatter={(value) => `$${Number(value) / 1000}k`} tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
-          <Tooltip
-            cursor={{ fill: "rgba(219, 234, 254, 0.35)" }}
-            formatter={(value) => formatCOP(Number(value))}
-            contentStyle={{ borderRadius: 16, borderColor: "#e2e8f0", boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
-          />
-          <Bar dataKey="value" fill="#0057d9" maxBarSize={34} radius={[8, 8, 0, 0]} />
-        </BarChart>
+          <BarChart data={data} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+            <XAxis dataKey="month" tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} interval={0} />
+            <YAxis width={46} tickFormatter={(value) => `$${Number(value) / 1000}k`} tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
+            <Tooltip
+              cursor={{ fill: "rgba(219, 234, 254, 0.35)" }}
+              formatter={(value) => formatCOP(Number(value))}
+              contentStyle={{ borderRadius: 16, borderColor: "#e2e8f0", boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+            />
+            <Bar dataKey="value" fill="#0057d9" maxBarSize={34} radius={[8, 8, 0, 0]} />
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </Card>

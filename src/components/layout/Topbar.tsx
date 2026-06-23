@@ -259,8 +259,8 @@ export function Topbar({
 
   return (
     <header className="sticky top-0 z-20 h-auto border-b border-slate-200 bg-white/95 px-4 py-4 backdrop-blur lg:h-[88px] lg:px-8">
-      <div className="flex h-full items-center justify-between gap-4">
-        <div className="flex min-w-0 flex-1 items-center gap-4">
+      <div className="flex h-full min-w-0 items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
           <Button variant="ghost" className="h-11 w-11 px-0 lg:hidden" aria-label="Abrir menu">
             <Menu className="h-5 w-5" />
           </Button>
@@ -274,7 +274,7 @@ export function Topbar({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <div className="relative">
             <button
               type="button"

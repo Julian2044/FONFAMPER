@@ -32,11 +32,13 @@ export function AppShell({ children, user, title, navigation, variant = "saver" 
         };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900">
+    <div className="min-h-screen overflow-x-clip bg-[#f8fafc] text-slate-900">
       <Sidebar items={navigation} variant={variant} />
-      <div className="lg:pl-[280px]">
+      <div className="min-w-0 lg:pl-[280px]">
         <Topbar user={user} title={title} variant={variant} {...topbarDemoLinks} />
-        <main className="mx-auto w-full max-w-7xl px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:py-8 lg:pb-10">{children}</main>
+        <main className="mx-auto min-w-0 w-full max-w-7xl px-4 py-6 pb-[calc(6.75rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:py-8 lg:pb-10">
+          {children}
+        </main>
       </div>
       <MobileNav items={navigation} />
     </div>

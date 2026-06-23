@@ -135,13 +135,13 @@ function ProfileAvatar() {
 
 export default function SaverProfilePage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-w-0">
       <div>
         <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">Mi perfil</h2>
         <p className="mt-2 text-base text-slate-500">Gestiona tu información y seguridad.</p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-6">
           <Card className="p-7">
             <p className="text-sm font-extrabold text-slate-950">Perfil</p>
@@ -168,9 +168,9 @@ export default function SaverProfilePage() {
               {personalData.map(({ label, value, icon }) => (
                 <div key={label} className="flex gap-4 py-5">
                   <IconBox icon={icon} />
-                  <div className="grid flex-1 gap-1 sm:grid-cols-[1fr_auto] sm:items-center">
+                  <div className="grid min-w-0 flex-1 gap-1 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                     <p className="text-sm font-semibold text-slate-500">{label}</p>
-                    <p className="text-sm font-extrabold text-slate-950 sm:text-right">{value}</p>
+                    <p className="whitespace-nowrap text-sm font-extrabold text-slate-950 sm:text-right">{value}</p>
                   </div>
                 </div>
               ))}
@@ -218,13 +218,13 @@ export default function SaverProfilePage() {
             </div>
             <div className="mt-2 divide-y divide-slate-100 px-6">
               {securitySummary.map(({ title, description, icon, status }) => (
-                <div key={title} className="grid gap-4 py-5 sm:grid-cols-[auto_1fr_auto] sm:items-center xl:grid-cols-[auto_1fr] xl:items-start 2xl:grid-cols-[auto_1fr_auto]">
+                <div key={title} className="grid gap-4 py-5 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
                   <IconBox icon={icon} />
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-extrabold text-slate-950">{title}</p>
                     <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
                   </div>
-                  <div className="sm:justify-self-end xl:col-span-2 xl:ml-[60px] xl:justify-self-start 2xl:col-span-1 2xl:ml-0 2xl:justify-self-end">{status}</div>
+                  <div className="sm:justify-self-end">{status}</div>
                 </div>
               ))}
             </div>
@@ -237,7 +237,7 @@ export default function SaverProfilePage() {
             </div>
             <div className="mt-2 divide-y divide-slate-100 px-6">
               {recentAccesses.map(({ city, device, ip, date, time, badge, icon: Icon, iconClassName }) => (
-                <div key={city} className="flex gap-4 py-5">
+                <div key={city} className="flex flex-col gap-4 py-5 sm:flex-row">
                   <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-full", iconClassName)}>
                     <Icon className="h-6 w-6" />
                   </div>
@@ -250,7 +250,7 @@ export default function SaverProfilePage() {
                     <p className="mt-1 text-sm text-slate-500">IP: {ip}</p>
                     {date ? <p className="mt-3 text-sm font-semibold text-slate-500">{date}</p> : null}
                   </div>
-                  <div className="shrink-0 text-right text-sm font-bold text-slate-500">
+                  <div className="shrink-0 text-left text-sm font-bold text-slate-500 sm:text-right">
                     <Clock3 className="ml-auto mb-2 h-4 w-4 text-slate-400" />
                     {time}
                   </div>

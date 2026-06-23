@@ -94,16 +94,18 @@ const indicatorTones = {
 function MetricCard({ title, value, helper, trend, link, href, icon: Icon, tone }: MetricCardData) {
   return (
     <Card className="min-h-[178px] p-5 2xl:p-6">
-      <div className="flex h-full flex-col">
-        <div className="flex items-start gap-4">
+      <div className="flex min-w-0 h-full flex-col">
+        <div className="flex min-w-0 items-start gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#DBEAFE] text-[#0057D9]">
             <Icon className="h-6 w-6" />
           </div>
-          <p className="min-w-0 pt-1 text-[14px] font-semibold leading-5 text-slate-950">{title}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] font-semibold leading-5 text-slate-950">{title}</p>
+            <p className="mt-3 whitespace-nowrap text-[24px] font-extrabold leading-none tracking-tight text-slate-950 sm:text-[30px]">{value}</p>
+          </div>
         </div>
 
-        <div className="mt-5 min-w-0">
-          <p className="whitespace-nowrap text-[26px] font-extrabold leading-none tracking-tight text-slate-950">{value}</p>
+        <div className="mt-3 min-w-0">
           <p className="mt-2 text-sm text-slate-500">{helper}</p>
           {trend ? <p className={cn("mt-3 text-xs font-bold", indicatorTones[tone])}>{trend}</p> : null}
           {link && href ? (
@@ -119,13 +121,13 @@ function MetricCard({ title, value, helper, trend, link, href, icon: Icon, tone 
 
 export default function AdminDashboardPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-w-0">
       <div>
         <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">Dashboard Administrativo</h2>
         <p className="mt-2 text-base text-slate-500">Resumen general del Fondo de Ahorro Familiar.</p>
       </div>
 
-      <div className="grid min-w-0 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+      <div className="grid min-w-0 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         {metricCards.map((metric) => (
           <MetricCard key={metric.title} {...metric} />
         ))}
@@ -133,12 +135,12 @@ export default function AdminDashboardPage() {
 
       <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <MonthlyActivityChart />
-        <Card className="min-h-[420px] p-6">
+        <Card className="min-h-[420px] p-5 sm:p-6">
           <h3 className="text-lg font-extrabold text-slate-950">Acciones rápidas</h3>
           <div className="mt-5 space-y-3">
             {quickActions.map(({ label, href, icon: Icon }) => (
-              <Link key={label} href={href} className="flex min-h-[58px] items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 transition hover:border-blue-100 hover:bg-blue-50/50">
-                <span className="flex min-w-0 items-center gap-3">
+              <Link key={label} href={href} className="flex min-h-[58px] w-full items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 transition hover:border-blue-100 hover:bg-blue-50/50">
+                <span className="flex min-w-0 flex-1 items-center gap-3">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#DBEAFE] text-[#0057D9]">
                     <Icon className="h-5 w-5" />
                   </span>
@@ -151,7 +153,7 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="min-w-0">
         <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <h3 className="text-lg font-extrabold text-slate-950">Operaciones recientes</h3>
           <Link href="/admin/auditoria" className="text-sm font-extrabold text-[#0057d9]">

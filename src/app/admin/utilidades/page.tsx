@@ -21,23 +21,23 @@ export default function AdminUtilitiesPage() {
   const [demoState, setDemoState] = useState("");
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-w-0">
       <div>
         <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">Utilidades</h2>
         <p className="mt-2 text-base text-slate-500">Gestiona la distribución y consulta el histórico</p>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {utilityCards.map(([title, value, helper, Icon]) => (
-          <Card key={title}>
-            <div className="flex items-start justify-between gap-4">
-              <div>
+          <Card key={title} className="min-h-[168px]">
+            <div className="flex min-w-0 items-start gap-4">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-slate-500">{title}</p>
-                <p className="mt-3 text-2xl font-extrabold text-slate-950">{value}</p>
+                <p className="mt-3 whitespace-nowrap text-[24px] font-extrabold leading-none tracking-tight text-slate-950 sm:text-[30px]">{value}</p>
                 <p className="mt-2 text-xs text-slate-500">{helper}</p>
               </div>
-              <div className="rounded-2xl bg-blue-50 p-3 text-[#0057d9]">
-                <Icon className="h-5 w-5" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[#0057d9]">
+                <Icon className="h-6 w-6" />
               </div>
             </div>
           </Card>
@@ -54,22 +54,24 @@ export default function AdminUtilitiesPage() {
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
             No se han registrado distribuciones de utilidades. Crea tu primera distribución para asignar utilidades a los usuarios elegibles.
           </p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Button variant="secondary" onClick={() => setDemoState("Simulación preparada con datos demo.")}>
+          <div className="mt-6 grid gap-3 sm:flex">
+            <Button variant="secondary" className="w-full sm:w-auto" onClick={() => setDemoState("Simulación preparada con datos demo.")}>
               <Calculator className="h-4 w-4" />
               Simular distribución
             </Button>
-            <Button onClick={() => setDemoState("Distribución lista para crear en modo demo.")}>Crear distribución</Button>
+            <Button className="w-full sm:w-auto" onClick={() => setDemoState("Distribución lista para crear en modo demo.")}>
+              Crear distribución
+            </Button>
           </div>
           {demoState ? <p className="mt-4 rounded-full bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">{demoState}</p> : null}
         </div>
       </Card>
 
-      <Card>
+      <Card className="min-w-0">
         <div className="mb-5 flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <h3 className="text-lg font-extrabold text-slate-950">Base de distribución</h3>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button variant="secondary">
+          <div className="grid gap-3 sm:flex">
+            <Button variant="secondary" className="w-full sm:w-auto">
               <Download className="h-4 w-4" />
               Exportar (Excel)
             </Button>

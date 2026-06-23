@@ -28,22 +28,22 @@ const historyRows = [
 
 export default function AdminReportsPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-w-0">
       <div>
         <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">Reportes</h2>
         <p className="mt-2 text-base text-slate-500">Consulta indicadores y exporta información del fondo.</p>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map(([label, value]) => (
-          <Card key={label}>
+          <Card key={label} className="min-h-[132px]">
             <p className="text-sm font-semibold text-slate-500">{label}</p>
-            <p className="mt-3 text-2xl font-extrabold text-slate-950">{value}</p>
+            <p className="mt-3 whitespace-nowrap text-[24px] font-extrabold leading-none tracking-tight text-slate-950 sm:text-[30px]">{value}</p>
           </Card>
         ))}
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {reports.map(([title, description, Icon]) => (
           <Card key={title}>
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#0057d9]">
@@ -51,12 +51,12 @@ export default function AdminReportsPage() {
             </div>
             <h3 className="mt-5 text-lg font-extrabold text-slate-950">{title}</h3>
             <p className="mt-2 min-h-12 text-sm leading-6 text-slate-500">{description}</p>
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <Button variant="secondary" className="flex-1">
+            <div className="mt-5 grid gap-3 sm:flex">
+              <Button variant="secondary" className="w-full sm:flex-1">
                 <BarChart3 className="h-4 w-4" />
                 Ver reporte
               </Button>
-              <Button className="flex-1">
+              <Button className="w-full sm:flex-1">
                 <Download className="h-4 w-4" />
                 Exportar
               </Button>
@@ -65,7 +65,7 @@ export default function AdminReportsPage() {
         ))}
       </div>
 
-      <Card>
+      <Card className="min-w-0">
         <h3 className="mb-5 text-lg font-extrabold text-slate-950">Historial de reportes generados</h3>
         <DataTable
           columns={["Fecha", "Reporte", "Usuario", "Formato", "Estado", "Acción"]}

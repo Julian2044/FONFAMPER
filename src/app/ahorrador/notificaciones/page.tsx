@@ -128,15 +128,15 @@ const notificationTones = {
 
 function NotificationStatCard({ title, value, helper, icon: Icon, tone }: (typeof stats)[number]) {
   return (
-    <Card className="min-h-36">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <Card className="min-h-[168px]">
+      <div className="flex min-w-0 items-start gap-4">
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-slate-500">{title}</p>
-          <p className="mt-3 text-3xl font-extrabold text-slate-950">{value}</p>
+          <p className="mt-3 whitespace-nowrap text-[24px] font-extrabold leading-none tracking-tight text-slate-950 sm:text-[30px]">{value}</p>
           <p className="mt-2 text-sm text-slate-500">{helper}</p>
         </div>
-        <div className={cn("rounded-2xl p-3", statTones[tone])}>
-          <Icon className="h-5 w-5" />
+        <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-full", statTones[tone])}>
+          <Icon className="h-6 w-6" />
         </div>
       </div>
     </Card>
@@ -159,19 +159,19 @@ function SwitchVisual({ enabled }: { enabled: boolean }) {
 
 export default function SaverNotificationsPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-w-0">
       <div>
         <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">Notificaciones</h2>
         <p className="mt-2 text-base text-slate-500">Consulta las novedades y alertas de tu fondo de ahorro familiar.</p>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
           <NotificationStatCard key={stat.title} {...stat} />
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Card className="p-0">
           <div className="flex flex-col gap-4 px-6 pt-6 lg:flex-row lg:items-center lg:justify-between">
             <h3 className="text-lg font-extrabold text-slate-950">Bandeja de notificaciones</h3>
@@ -196,7 +196,7 @@ export default function SaverNotificationsPage() {
               const unread = state === "No leída";
 
               return (
-                <div key={title} className={cn("relative flex gap-4 px-6 py-5", unread ? "bg-blue-50/60" : "bg-white")}>
+                <div key={title} className={cn("relative flex flex-col gap-4 px-6 py-5 sm:flex-row", unread ? "bg-blue-50/60" : "bg-white")}>
                   {unread ? <span className="absolute left-0 top-5 h-12 w-1 rounded-r-full bg-[#0A5FD8]" /> : null}
                   <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl", notificationTones[tone])}>
                     <Icon className="h-5 w-5" />
@@ -209,7 +209,7 @@ export default function SaverNotificationsPage() {
                     <p className="mt-2 text-base font-extrabold text-slate-950">{title}</p>
                     <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">{text}</p>
                   </div>
-                  <div className="flex shrink-0 flex-col items-end justify-between gap-4 text-right">
+                  <div className="flex shrink-0 flex-row items-center justify-between gap-4 text-right sm:flex-col sm:items-end sm:justify-between">
                     <p className="text-sm font-bold text-slate-500">{date}</p>
                     <button type="button" aria-label={`Opciones para ${title}`} className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
                       <MoreHorizontal className="h-5 w-5" />

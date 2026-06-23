@@ -17,14 +17,14 @@ const activity = [
 
 export default function AdminAuditPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-w-0">
       <div>
         <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">Auditoría</h2>
         <p className="mt-2 text-base text-slate-500">Rastrea cambios, accesos y operaciones del sistema</p>
       </div>
 
-      <Card>
-        <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_1fr_auto]">
+      <Card className="min-w-0">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1fr_auto]">
           <label>
             <span className="mb-2 block text-sm font-bold text-slate-700">Fecha</span>
             <Select defaultValue="fecha">
@@ -58,15 +58,15 @@ export default function AdminAuditPage() {
         </div>
       </Card>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <AdminMetricCard title="Eventos hoy" value="14" helper="Registrados" icon={History} />
         <AdminMetricCard title="Inicios de sesión" value="6" helper="Exitosos" icon={KeyRound} tone="green" />
         <AdminMetricCard title="Cambios de registros" value="5" helper="Modificaciones" icon={ListChecks} />
         <AdminMetricCard title="Alertas" value="0" helper="Sin alertas" icon={AlertCircle} tone="gray" />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <Card>
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <Card className="min-w-0">
           <h3 className="mb-5 text-lg font-extrabold text-slate-950">Registro de auditoría</h3>
           <DataTable
             columns={["Fecha y hora", "Usuario", "Módulo", "Acción", "Descripción", "Estado"]}
@@ -82,7 +82,7 @@ export default function AdminAuditPage() {
         </Card>
 
         <div className="space-y-6">
-          <Card>
+          <Card className="min-w-0">
             <h3 className="text-lg font-extrabold text-slate-950">Actividad reciente</h3>
             <div className="mt-5 space-y-4 text-sm text-slate-600">
               {activity.map((item) => (
@@ -91,7 +91,7 @@ export default function AdminAuditPage() {
             </div>
           </Card>
 
-          <Card>
+          <Card className="min-w-0">
             <h3 className="text-lg font-extrabold text-slate-950">Exportar auditoría</h3>
             <label className="mt-5 block">
               <span className="mb-2 block text-sm font-bold text-slate-700">Formato de archivo</span>

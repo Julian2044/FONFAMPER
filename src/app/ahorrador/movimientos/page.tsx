@@ -14,7 +14,7 @@ export default function SaverMovementsPage() {
   const { summary, movements } = camiloAccount;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-w-0">
       <div>
         <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">Movimientos</h2>
         <p className="mt-2 text-base text-slate-500">Consulta el historial de tu cuenta</p>
@@ -27,14 +27,14 @@ export default function SaverMovementsPage() {
         <MoneyCard title="Saldo actual" value={summary.currentBalance} icon={ArrowUpRight} tone="blue" />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Card>
-          <div className="flex flex-col gap-4 lg:flex-row">
-            <div className="relative flex-1">
+          <div className="flex min-w-0 flex-col gap-4 sm:flex-row">
+            <div className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-slate-400" />
               <Input className="pl-10" placeholder="Buscar movimientos..." />
             </div>
-            <div className="flex min-h-11 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">
+            <div className="flex min-h-11 min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">
               <CalendarDays className="h-4 w-4 text-slate-400" />
               01 dic 2022 → 31 ene 2023
             </div>
@@ -60,7 +60,7 @@ export default function SaverMovementsPage() {
           </div>
         </Card>
 
-        <Card>
+        <Card className="min-w-0">
           <h3 className="text-lg font-extrabold text-slate-950">Último movimiento</h3>
           <div className="mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
             <ArrowUpRight className="h-7 w-7" />

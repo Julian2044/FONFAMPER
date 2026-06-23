@@ -11,18 +11,18 @@ const steps = [
 
 export default function SaverUtilitiesPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-w-0">
       <div>
         <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">Utilidades</h2>
         <p className="mt-2 text-base text-slate-500">Revisa los rendimientos generados en tu cuenta.</p>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <MoneyCard title="Total histórico" value={0} icon={Coins} tone="gray" helper="Desde el inicio" />
         <MoneyCard title="Utilidad del periodo" value={0} icon={PieChart} tone="gray" helper="Ene 2023" />
-        <Card>
+        <Card className="min-h-[168px]">
           <p className="text-sm font-semibold text-slate-500">Última distribución</p>
-          <p className="mt-3 text-2xl font-extrabold text-slate-950">Sin registrar</p>
+          <p className="mt-3 text-[24px] font-extrabold leading-none tracking-tight text-slate-950">Sin registrar</p>
           <p className="mt-2 text-xs text-slate-500">No hay distribuciones</p>
         </Card>
         <MoneyCard title="Saldo base actual" value={950000} icon={Wallet} tone="blue" helper="Al 15 ene 2023" />
@@ -43,7 +43,7 @@ export default function SaverUtilitiesPage() {
 
       <Card>
         <h3 className="text-xl font-extrabold text-slate-950">¿Cómo se calculan las utilidades?</h3>
-        <div className="mt-6 grid gap-5 lg:grid-cols-4">
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map(([title, description, Icon], index) => (
             <div key={title} className="relative rounded-2xl border border-slate-200 bg-slate-50 p-5">
               {index < steps.length - 1 ? <div className="absolute -right-3 top-10 hidden h-px w-6 bg-blue-200 lg:block" /> : null}

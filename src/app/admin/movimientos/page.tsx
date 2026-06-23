@@ -14,13 +14,13 @@ export default function AdminMovementsPage() {
   const [ready, setReady] = useState(false);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-w-0">
       <div>
         <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">Registrar movimiento</h2>
         <p className="mt-2 text-base text-slate-500">Agrega aportes, retiros o ajustes a una cuenta</p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
         <Card>
           <div className="grid gap-5 md:grid-cols-2">
             <label>
@@ -67,7 +67,7 @@ export default function AdminMovementsPage() {
             </label>
           </div>
 
-          <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+          <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center sm:p-8">
             <CloudUpload className="mx-auto h-11 w-11 text-[#0057d9]" />
             <p className="mt-3 font-extrabold text-slate-950">Arrastra y suelta tu archivo aquí</p>
             <p className="mt-1 text-sm text-slate-500">o haz clic para seleccionar un archivo</p>
@@ -81,11 +81,11 @@ export default function AdminMovementsPage() {
             <div className="mt-5 space-y-4 text-sm">
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Saldo anterior</span>
-                <span className="font-bold text-slate-950">{formatCOP(900000)}</span>
+                <span className="whitespace-nowrap font-bold text-slate-950">{formatCOP(900000)}</span>
               </div>
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Nuevo saldo</span>
-                <span className="font-bold text-[#0057d9]">{formatCOP(950000)}</span>
+                <span className="whitespace-nowrap font-bold text-[#0057d9]">{formatCOP(950000)}</span>
               </div>
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Estado</span>
@@ -97,11 +97,11 @@ export default function AdminMovementsPage() {
             </div>
           </Card>
 
-          <div className="flex gap-3">
-            <Link href="/admin/dashboard" className="inline-flex h-11 flex-1 items-center justify-center rounded-xl bg-white px-4 text-sm font-semibold text-[#004aad] ring-1 ring-[#0057d9]/25 transition hover:bg-blue-50">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Link href="/admin/dashboard" className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-white px-4 text-sm font-semibold text-[#004aad] ring-1 ring-[#0057d9]/25 transition hover:bg-blue-50">
               Cancelar
             </Link>
-            <Button className="flex-1" onClick={() => setReady(true)}>
+            <Button className="w-full" onClick={() => setReady(true)}>
               <Save className="h-4 w-4" />
               Registrar movimiento
             </Button>

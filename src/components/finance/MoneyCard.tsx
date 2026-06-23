@@ -20,15 +20,15 @@ const tones = {
 
 export function MoneyCard({ title, value, icon: Icon, tone = "blue", helper }: MoneyCardProps) {
   return (
-    <Card>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-slate-500">{title}</p>
-          <p className="mt-3 text-2xl font-bold text-slate-950 sm:text-3xl">{formatCOP(value)}</p>
-          {helper ? <p className="mt-2 text-xs text-slate-500">{helper}</p> : null}
-        </div>
-        <div className={cn("rounded-lg p-3", tones[tone])}>
+    <Card className="min-h-[168px]">
+      <div className="flex min-w-0 items-start gap-4">
+        <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-full", tones[tone])}>
           <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-slate-500">{title}</p>
+          <p className="mt-3 whitespace-nowrap text-[24px] font-bold leading-none tracking-tight text-slate-950 sm:text-[30px]">{formatCOP(value)}</p>
+          {helper ? <p className="mt-2 text-xs text-slate-500">{helper}</p> : null}
         </div>
       </div>
     </Card>

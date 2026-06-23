@@ -22,25 +22,25 @@ const statementRows = [
 
 export default function AdminStatementsPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-w-0">
       <div>
         <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">Estados de cuenta</h2>
         <p className="mt-2 text-base text-slate-500">Genera, consulta y descarga estados de cuenta de los ahorradores.</p>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map(([label, value]) => (
-          <Card key={label}>
+          <Card key={label} className="min-h-[132px]">
             <p className="text-sm font-semibold text-slate-500">{label}</p>
-            <p className="mt-3 text-3xl font-extrabold text-slate-950">{value}</p>
+            <p className="mt-3 whitespace-nowrap text-[24px] font-extrabold leading-none tracking-tight text-slate-950 sm:text-[30px]">{value}</p>
           </Card>
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-6">
-          <Card>
-            <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
+          <Card className="min-w-0">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto]">
               <label>
                 <span className="mb-2 block text-sm font-bold text-slate-700">Usuario</span>
                 <Select defaultValue="todos">
@@ -68,7 +68,7 @@ export default function AdminStatementsPage() {
             </div>
           </Card>
 
-          <Card>
+          <Card className="min-w-0">
             <DataTable
               columns={["Usuario", "Periodo", "Saldo inicial", "Aportes", "Utilidades", "Retiros", "Saldo final", "Estado", "Acción"]}
               rows={statementRows.map(([user, period, initial, contributions, utilities, withdrawals, finalBalance, status, action]) => [
@@ -86,7 +86,7 @@ export default function AdminStatementsPage() {
           </Card>
         </div>
 
-        <Card>
+        <Card className="min-w-0">
           <h3 className="text-lg font-extrabold text-slate-950">Vista previa</h3>
           <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
             <div className="min-h-[420px] rounded-xl bg-white p-6 shadow-sm">
@@ -104,15 +104,15 @@ export default function AdminStatementsPage() {
             </div>
           </div>
           <div className="mt-5 grid gap-3">
-            <Button variant="secondary">
+            <Button variant="secondary" className="w-full">
               <Download className="h-4 w-4" />
               Descargar PDF
             </Button>
-            <Button variant="secondary">
+            <Button variant="secondary" className="w-full">
               <Mail className="h-4 w-4" />
               Enviar por correo
             </Button>
-            <Button>
+            <Button className="w-full">
               <Eye className="h-4 w-4" />
               Ver detalle
             </Button>

@@ -17,9 +17,9 @@ export function UploadBox({ title, description, helper, primaryLabel, secondaryL
       </div>
       <h3 className="mt-5 text-lg font-extrabold text-slate-950">{title}</h3>
       <p className="mt-2 max-w-md text-sm text-slate-500">{description}</p>
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Button>{primaryLabel}</Button>
-        {secondaryLabel ? <Button variant="secondary">{secondaryLabel}</Button> : null}
+      <div className="mt-6 grid w-full gap-3 sm:flex sm:justify-center">
+        <Button className="w-full sm:w-auto">{primaryLabel}</Button>
+        {secondaryLabel ? <Button variant="secondary" className="w-full sm:w-auto">{secondaryLabel}</Button> : null}
       </div>
       <p className="mt-4 text-xs font-medium text-slate-500">{helper}</p>
     </div>

@@ -11,13 +11,13 @@ const steps = ["Cargar archivo", "Validar columnas", "Revisar registros", "Confi
 
 export default function AdminImportsPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-w-0">
       <div>
         <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">Importar Excel</h2>
         <p className="mt-2 text-base text-slate-500">Carga y valida movimientos desde archivo</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {steps.map((step, index) => (
           <Card key={step} className={index === 0 ? "border-blue-200 bg-blue-50" : "bg-white"}>
             <div className="flex items-center gap-3">
@@ -30,8 +30,8 @@ export default function AdminImportsPage() {
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_370px]">
-        <Card>
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_370px]">
+        <Card className="min-w-0">
           <UploadBox
             title="Arrastra y suelta tu archivo Excel aquí"
             description="o selecciona un archivo desde tu dispositivo"
@@ -41,7 +41,7 @@ export default function AdminImportsPage() {
           />
         </Card>
 
-        <Card>
+        <Card className="min-w-0">
           <h3 className="text-lg font-extrabold text-slate-950">Validación del archivo</h3>
           <div className="mt-5 space-y-4 text-sm">
             <div className="flex items-center gap-2 text-emerald-700">
@@ -62,7 +62,7 @@ export default function AdminImportsPage() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="min-w-0">
         <h3 className="mb-5 text-lg font-extrabold text-slate-950">Vista previa</h3>
         <DataTable
           columns={["Nombre", "Acumulado año 2022", "Ene", "Feb", "Mar", "Total", "Estado"]}
@@ -76,9 +76,11 @@ export default function AdminImportsPage() {
             <Badge key="status" tone="green">{status}</Badge>
           ])}
         />
-        <div className="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
-          <Button variant="secondary">Cancelar importación</Button>
-          <Button>Siguiente: Validar columnas</Button>
+        <div className="mt-6 grid gap-3 sm:flex sm:justify-end">
+          <Button variant="secondary" className="w-full sm:w-auto">
+            Cancelar importación
+          </Button>
+          <Button className="w-full sm:w-auto">Siguiente: Validar columnas</Button>
         </div>
       </Card>
     </div>
