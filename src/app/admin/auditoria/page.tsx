@@ -7,6 +7,14 @@ import { DataTable } from "@/components/ui/DataTable";
 import { Select } from "@/components/ui/Select";
 import { auditEvents } from "@/data/demo/admin";
 
+const activity = [
+  "Sonia Perez editó el usuario Camilo Perez",
+  "Sonia Perez creó un movimiento de aporte para Camilo Perez",
+  "Sonia Perez importó un archivo aportes_mayo.xlsx",
+  "Sonia Perez generó estados de cuenta de mayo 2024",
+  "Sistema inició sesión exitosamente"
+];
+
 export default function AdminAuditPage() {
   return (
     <div className="space-y-8">
@@ -17,11 +25,36 @@ export default function AdminAuditPage() {
 
       <Card>
         <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_1fr_auto]">
-          <Select defaultValue="fecha"><option value="fecha">01/05/2024 - 14/05/2024</option></Select>
-          <Select defaultValue="todos"><option value="todos">Todos los usuarios</option></Select>
-          <Select defaultValue="tipos"><option value="tipos">Todos los tipos</option></Select>
-          <Select defaultValue="estados"><option value="estados">Todos los estados</option></Select>
-          <Button variant="secondary"><RotateCcw className="h-4 w-4" />Limpiar filtros</Button>
+          <label>
+            <span className="mb-2 block text-sm font-bold text-slate-700">Fecha</span>
+            <Select defaultValue="fecha">
+              <option value="fecha">01/05/2024 - 14/05/2024</option>
+            </Select>
+          </label>
+          <label>
+            <span className="mb-2 block text-sm font-bold text-slate-700">Usuario</span>
+            <Select defaultValue="todos">
+              <option value="todos">Todos los usuarios</option>
+            </Select>
+          </label>
+          <label>
+            <span className="mb-2 block text-sm font-bold text-slate-700">Tipo de evento</span>
+            <Select defaultValue="tipos">
+              <option value="tipos">Todos los tipos</option>
+            </Select>
+          </label>
+          <label>
+            <span className="mb-2 block text-sm font-bold text-slate-700">Estado</span>
+            <Select defaultValue="estados">
+              <option value="estados">Todos los estados</option>
+            </Select>
+          </label>
+          <div className="flex items-end">
+            <Button variant="secondary">
+              <RotateCcw className="h-4 w-4" />
+              Limpiar filtros
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -32,7 +65,7 @@ export default function AdminAuditPage() {
         <AdminMetricCard title="Alertas" value="0" helper="Sin alertas" icon={AlertCircle} tone="gray" />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Card>
           <h3 className="mb-5 text-lg font-extrabold text-slate-950">Registro de auditoría</h3>
           <DataTable
@@ -52,13 +85,7 @@ export default function AdminAuditPage() {
           <Card>
             <h3 className="text-lg font-extrabold text-slate-950">Actividad reciente</h3>
             <div className="mt-5 space-y-4 text-sm text-slate-600">
-              {[
-                "Sonia Perez editó el usuario Camilo Perez",
-                "Sonia Perez creó un movimiento de aporte para Camilo Perez",
-                "Sonia Perez importó un archivo aportes_mayo.xlsx",
-                "Sonia Perez generó estados de cuenta de mayo 2024",
-                "Sistema inició sesión exitosamente"
-              ].map((item) => (
+              {activity.map((item) => (
                 <div key={item} className="border-b border-slate-100 pb-3 last:border-0">{item}</div>
               ))}
             </div>
@@ -68,9 +95,14 @@ export default function AdminAuditPage() {
             <h3 className="text-lg font-extrabold text-slate-950">Exportar auditoría</h3>
             <label className="mt-5 block">
               <span className="mb-2 block text-sm font-bold text-slate-700">Formato de archivo</span>
-              <Select defaultValue="xlsx"><option value="xlsx">Excel (.xlsx)</option></Select>
+              <Select defaultValue="xlsx">
+                <option value="xlsx">Excel (.xlsx)</option>
+              </Select>
             </label>
-            <Button className="mt-5 w-full"><FileDown className="h-4 w-4" />Exportar</Button>
+            <Button className="mt-5 w-full">
+              <FileDown className="h-4 w-4" />
+              Exportar
+            </Button>
           </Card>
         </div>
       </div>

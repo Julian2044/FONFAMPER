@@ -58,5 +58,7 @@ export const auditEvents = [
   ["13 may 2024 16:42", "Sonia Perez", "Utilidades", "Importar Excel", "Importó archivo aportes_mayo.xlsx (12 registros).", "Completado"],
   ["13 may 2024 11:07", "Sonia Perez", "Estados de cuenta", "Generar", "Generó estado de cuenta de mayo 2024 para 15 usuarios.", "Completado"],
   ["12 may 2024 18:21", "Sistema", "Seguridad", "Inicio de sesión", "Inicio de sesión exitoso desde 192.168.1.45 (Chrome - Windows).", "Completado"],
+  ["12 may 2024 17:55", "Sonia Perez", "Reportes", "Generar reporte", "Generó el reporte “Aportes del mes”.", "Completado"],
+  ["12 may 2024 17:20", "Sonia Perez", "Usuarios", "Crear", "Creó el usuario Alejandro Pérez.", "Completado"],
   ["12 may 2024 16:05", "Sistema", "Seguridad", "Intento fallido", "Intento de inicio de sesión fallido para usuario desconocido.", "Fallido"]
 ] as const;

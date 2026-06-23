@@ -10,7 +10,7 @@ export const saverNavigation: NavItem[] = [
   { label: "Movimientos", href: "/ahorrador/movimientos", iconKey: "movements" },
   { label: "Utilidades", href: "/ahorrador/utilidades", iconKey: "chart" },
   { label: "Estado de cuenta", href: "/ahorrador/estado-cuenta", iconKey: "file" },
-  { label: "Notificaciones", href: "/ahorrador/inicio", iconKey: "bell", disabled: true },
+  { label: "Notificaciones", href: "/ahorrador/notificaciones", iconKey: "bell" },
   { label: "Mi perfil", href: "/ahorrador/perfil", iconKey: "user" }
 ];
 
@@ -20,8 +20,8 @@ export const adminNavigation: NavItem[] = [
   { label: "Movimientos", href: "/admin/movimientos", iconKey: "movements" },
   { label: "Utilidades", href: "/admin/utilidades", iconKey: "wallet" },
   { label: "Importar Excel", href: "/admin/importaciones", iconKey: "upload" },
-  { label: "Estados de cuenta", href: "/admin/dashboard", iconKey: "file", disabled: true },
-  { label: "Reportes", href: "/admin/dashboard", iconKey: "report", disabled: true },
+  { label: "Estados de cuenta", href: "/admin/estados-cuenta", iconKey: "file" },
+  { label: "Reportes", href: "/admin/reportes", iconKey: "report" },
   { label: "Auditoría", href: "/admin/auditoria", iconKey: "audit" },
-  { label: "Configuración", href: "/admin/dashboard", iconKey: "settings", disabled: true }
+  { label: "Configuración", href: "/admin/configuracion", iconKey: "settings" }
 ];

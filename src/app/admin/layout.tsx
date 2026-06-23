@@ -5,7 +5,7 @@ import { adminNavigation } from "@/lib/navigation";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <AppShell user={sonia} title="Administracion" navigation={adminNavigation} variant="admin">
+    <AppShell user={sonia} title="Administración" navigation={adminNavigation} variant="admin">
       {children}
     </AppShell>
   );
