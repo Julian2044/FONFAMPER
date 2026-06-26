@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   Bell,
@@ -11,7 +12,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  RefreshCw,
   Search,
   ShieldCheck,
   User,
@@ -21,6 +21,7 @@ import {
 import type { DemoUser } from "@/types/user";
 import { AvatarPlaceholder } from "@/components/ui/AvatarPlaceholder";
 import { Button } from "@/components/ui/Button";
+import { createClientBrowser } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 type TopbarProps = {
@@ -30,16 +31,16 @@ type TopbarProps = {
   tipoPortal?: "ahorrador" | "admin";
   perfilHref?: string;
   notificacionesHref?: string;
-  cambiarUsuarioHref?: string;
   cerrarSesionHref?: string;
 };
 
 type DropdownItem = {
   label: string;
-  href: string;
+  href?: string;
   icon: LucideIcon;
   badge?: string;
   danger?: boolean;
+  action?: "logout";
 };
 
 type NotificationItem = {
@@ -128,36 +129,65 @@ function getDropdownItems({
   variant,
   perfilHref,
   notificacionesHref,
-  cambiarUsuarioHref,
   cerrarSesionHref
-}: Required<Pick<TopbarProps, "variant" | "perfilHref" | "notificacionesHref" | "cambiarUsuarioHref" | "cerrarSesionHref">>) {
+}: Required<Pick<TopbarProps, "variant" | "perfilHref" | "notificacionesHref" | "cerrarSesionHref">>) {
   if (variant === "admin") {
     return {
       primaryItems: [
         { label: "Panel administrativo", href: perfilHref, icon: LayoutDashboard },
-        { label: "Auditoría", href: notificacionesHref, icon: ClipboardList },
-        { label: "Cambiar a Camilo demo", href: cambiarUsuarioHref, icon: RefreshCw }
+        { label: "Auditoría", href: "/admin/auditoria", icon: ClipboardList },
+        { label: "Configuración", href: "/admin/configuracion", icon: ShieldCheck }
       ] satisfies DropdownItem[],
-      dangerItem: { label: "Cerrar sesión", href: cerrarSesionHref, icon: LogOut, danger: true } satisfies DropdownItem
+      dangerItem: { label: "Cerrar sesión", href: cerrarSesionHref, icon: LogOut, danger: true, action: "logout" } satisfies DropdownItem
     };
   }
 
   return {
     primaryItems: [
       { label: "Mi perfil", href: perfilHref, icon: User },
-      { label: "Notificaciones", href: notificacionesHref, icon: Bell, badge: "2" },
-      { label: "Cambiar a Sonia demo", href: cambiarUsuarioHref, icon: RefreshCw }
+      { label: "Notificaciones", href: notificacionesHref, icon: Bell, badge: "2" }
     ] satisfies DropdownItem[],
-    dangerItem: { label: "Cerrar sesión", href: cerrarSesionHref, icon: LogOut, danger: true } satisfies DropdownItem
+    dangerItem: { label: "Cerrar sesión", href: cerrarSesionHref, icon: LogOut, danger: true, action: "logout" } satisfies DropdownItem
   };
 }
 
 function DropdownLink({ item, onNavigate }: { item: DropdownItem; onNavigate: () => void }) {
   const Icon = item.icon;
+  const router = useRouter();
+
+  async function handleLogout() {
+    const supabase = createClientBrowser();
+    await supabase.auth.signOut();
+    onNavigate();
+    router.push("/login");
+    router.refresh();
+  }
+
+  if (item.action === "logout") {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          void handleLogout();
+        }}
+        className={cn(
+          "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition hover:bg-slate-50",
+          item.danger ? "text-red-600 hover:bg-red-50" : "text-slate-700"
+        )}
+      >
+        <span className="flex min-w-0 items-center gap-3">
+          <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", item.danger ? "bg-red-50 text-red-600" : "bg-blue-50 text-[#004AAD]")}>
+            <Icon className="h-4 w-4" />
+          </span>
+          <span className="truncate">{item.label}</span>
+        </span>
+      </button>
+    );
+  }
 
   return (
     <Link
-      href={item.href}
+      href={item.href ?? "#"}
       onClick={onNavigate}
       className={cn(
         "flex items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition hover:bg-slate-50",
@@ -240,7 +270,6 @@ export function Topbar({
   tipoPortal,
   perfilHref,
   notificacionesHref,
-  cambiarUsuarioHref,
   cerrarSesionHref = "/login"
 }: TopbarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -248,12 +277,10 @@ export function Topbar({
   const resolvedTipoPortal = tipoPortal ?? (variant === "admin" ? "admin" : "ahorrador");
   const resolvedPerfilHref = perfilHref ?? (variant === "admin" ? "/admin/dashboard" : "/ahorrador/perfil");
   const resolvedNotificacionesHref = notificacionesHref ?? (variant === "admin" ? "/admin/auditoria" : "/ahorrador/notificaciones");
-  const resolvedCambiarUsuarioHref = cambiarUsuarioHref ?? (variant === "admin" ? "/ahorrador/inicio" : "/admin/dashboard");
   const { primaryItems, dangerItem } = getDropdownItems({
     variant,
     perfilHref: resolvedPerfilHref,
     notificacionesHref: resolvedNotificacionesHref,
-    cambiarUsuarioHref: resolvedCambiarUsuarioHref,
     cerrarSesionHref
   });
 
@@ -343,7 +370,7 @@ export function Topbar({
                   <div className="min-w-0">
                     <p className="truncate text-sm font-extrabold text-slate-950">{user.name}</p>
                     <p className="text-xs font-semibold text-slate-500">{user.role}</p>
-                    <p className="mt-1 text-xs text-slate-400">Cuenta demo</p>
+                    <p className="mt-1 text-xs text-slate-400">{resolvedTipoPortal === "admin" ? "Portal administrativo" : "Portal del ahorrador"}</p>
                   </div>
                 </div>
 

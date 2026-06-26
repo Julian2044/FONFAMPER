@@ -20,14 +20,12 @@ export function AppShell({ children, user, title, navigation, variant = "saver" 
           tipoPortal: "admin" as const,
           perfilHref: "/admin/dashboard",
           notificacionesHref: "/admin/auditoria",
-          cambiarUsuarioHref: "/ahorrador/inicio",
           cerrarSesionHref: "/login"
         }
       : {
           tipoPortal: "ahorrador" as const,
           perfilHref: "/ahorrador/perfil",
           notificacionesHref: "/ahorrador/notificaciones",
-          cambiarUsuarioHref: "/admin/dashboard",
           cerrarSesionHref: "/login"
         };
 

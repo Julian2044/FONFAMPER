@@ -1,8 +1,7 @@
 import { createClientServer } from "@/lib/supabase/server";
+import { getCurrentProfile } from "@/lib/fonfamper/auth";
 import type { Database, Json } from "@/lib/supabase/types";
 import { formatDate } from "@/lib/fonfamper/format";
-
-const DEMO_ADMIN_EMAIL = "sonia.perez@email.com";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type AccountRow = Database["public"]["Tables"]["accounts"]["Row"];
@@ -265,6 +264,7 @@ function buildAuditRows(auditLogs: AuditLogRow[], profilesById: Map<string, Prof
 
 export async function getDemoAdminData(): Promise<DemoAdminData> {
   const supabase = createClientServer();
+  const currentProfile = await getCurrentProfile();
 
   const [profilesResponse, accountsResponse, movementsResponse, auditLogsResponse] = await Promise.all([
     supabase.schema("public").from("profiles").select("*").order("full_name", { ascending: true }),
@@ -291,7 +291,7 @@ export async function getDemoAdminData(): Promise<DemoAdminData> {
   const movements = buildMovementRows(movementsRaw, profilesById);
   const users = buildUserRows(profiles, accounts, movements);
   const auditLogs = buildAuditRows(auditRaw, profilesById);
-  const adminProfile = profiles.find((profile) => profile.email === DEMO_ADMIN_EMAIL) ?? profiles.find((profile) => profile.role === "ADMIN") ?? null;
+  const adminProfile = currentProfile?.role === "ADMIN" ? currentProfile : profiles.find((profile) => profile.role === "ADMIN") ?? null;
   const activeUsers = users.filter((user) => user.status.toUpperCase() === "ACTIVO").length;
   const totalManagedBalance = accounts.reduce((total, account) => total + Number(account.current_balance ?? 0), 0);
   const totalContributions = accounts.reduce((total, account) => total + Number(account.total_contributions ?? 0), 0);

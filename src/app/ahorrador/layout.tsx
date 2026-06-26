@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/layout/AppShell";
-import { camilo } from "@/data/demo/camilo";
+import { requireRole, toDemoUser } from "@/lib/fonfamper/auth";
 import { saverNavigation } from "@/lib/navigation";
 
-export default function SaverLayout({ children }: { children: ReactNode }) {
+export default async function SaverLayout({ children }: { children: ReactNode }) {
+  const profile = await requireRole("AHORRADOR");
+
   return (
-    <AppShell user={camilo} title="Portal del ahorrador" navigation={saverNavigation}>
+    <AppShell user={toDemoUser(profile)} title="Portal del ahorrador" navigation={saverNavigation}>
       {children}
     </AppShell>
   );

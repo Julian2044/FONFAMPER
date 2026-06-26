@@ -1,8 +1,7 @@
 import { createClientServer } from "@/lib/supabase/server";
+import { getCurrentProfile } from "@/lib/fonfamper/auth";
 import type { Database } from "@/lib/supabase/types";
 import { formatDate } from "./format";
-
-const DEMO_EMAIL = "camilo.perez@email.com";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type AccountRow = Database["public"]["Tables"]["accounts"]["Row"];
@@ -127,27 +126,15 @@ function mapNotification(notification: NotificationRow): AhorradorNotification {
 
 export async function getDemoAhorradorData(): Promise<DemoAhorradorData> {
   const supabase = createClientServer();
+  const currentProfile = await getCurrentProfile();
 
-  const profileResponse = await supabase
-    .schema("public")
-    .from("profiles")
-    .select("*")
-    .eq("email", DEMO_EMAIL)
-    .maybeSingle<ProfileRow>();
-
-  const profileIssue = toIssue(profileResponse.error);
-
-  if (!profileResponse.data) {
-    const profileError = profileIssue ?? {
-      message: "No se encontró Camilo Perez. Puede ser que no exista o que RLS esté bloqueando la lectura.",
+  if (!currentProfile) {
+    const profileError = {
+      message: "No se encontró el perfil autenticado del ahorrador.",
       code: "",
       details: "",
       hint: ""
     };
-
-    if (profileIssue || profileResponse.error) {
-      console.error("[ahorrador-data] profiles", profileResponse.error);
-    }
 
     return {
       profile: null,
@@ -174,7 +161,8 @@ export async function getDemoAhorradorData(): Promise<DemoAhorradorData> {
     };
   }
 
-  const profile = profileResponse.data;
+  const profile = currentProfile;
+  const profileIssue: QueryIssue | null = null;
 
   const [accountResponse, movementsResponse, notificationsResponse] = await Promise.all([
     supabase
