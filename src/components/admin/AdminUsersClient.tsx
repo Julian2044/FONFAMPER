@@ -42,7 +42,7 @@ function movementLabel(type: AdminUserData["recentMovements"][number]["movementT
 }
 
 export function AdminUsersClient({ users }: AdminUsersClientProps) {
-  const [selectedUserName, setSelectedUserName] = useState(users.find((user) => user.role === "AHORRADOR")?.fullName ?? users[0]?.fullName ?? "");
+  const [selectedUserName, setSelectedUserName] = useState(users.find((user) => user.esAhorrador)?.fullName ?? users[0]?.fullName ?? "");
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
 
   const selectedUser = useMemo(
@@ -138,9 +138,22 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
               <AvatarPlaceholder name={selectedUser.fullName} size="lg" />
               <div className="min-w-0">
                 <h3 className="text-3xl font-extrabold text-slate-950">{selectedUser.fullName}</h3>
-                <div className="mt-3 flex items-center gap-2 text-sm font-bold text-emerald-700">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-600" />
-                  {roleLabel(selectedUser.role)}
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-sm font-bold">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[#004aad] ring-1 ring-blue-100">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#004aad]" />
+                    {roleLabel(selectedUser.roleSistema)}
+                  </span>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1",
+                      selectedUser.esAhorrador
+                        ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
+                        : "bg-slate-100 text-slate-600 ring-slate-200"
+                    )}
+                  >
+                    <span className={cn("h-2.5 w-2.5 rounded-full", selectedUser.esAhorrador ? "bg-emerald-600" : "bg-slate-400")} />
+                    {selectedUser.esAhorrador ? "Ahorro habilitado" : "Sin ahorro"}
+                  </span>
                 </div>
               </div>
             </div>

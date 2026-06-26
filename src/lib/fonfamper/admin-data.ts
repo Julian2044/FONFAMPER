@@ -22,6 +22,8 @@ export type AdminUserData = {
   phone: string | null;
   documentId: string | null;
   role: ProfileRow["role"];
+  roleSistema: ProfileRow["role"];
+  esAhorrador: boolean;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -227,6 +229,8 @@ function buildUserRows(profiles: ProfileRow[], accounts: AccountRow[], movements
       phone: profile.phone,
       documentId: profile.document_id,
       role: profile.role,
+      roleSistema: profile.role,
+      esAhorrador: Boolean(account),
       status: profile.status,
       createdAt: profile.created_at,
       updatedAt: profile.updated_at,

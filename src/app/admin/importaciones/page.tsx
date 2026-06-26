@@ -19,7 +19,7 @@ function monthTotal(profileId: string, monthIndex: number, movements: AdminData[
 
 export default async function AdminImportsPage() {
   const adminData = await getDemoAdminData();
-  const saverUsers = adminData.users.filter((user) => user.role === "AHORRADOR" && user.account);
+  const saverUsers = adminData.users.filter((user) => user.esAhorrador);
   const previewRows = saverUsers.map((user) => {
     const enero = monthTotal(user.id, 0, adminData.movements);
     const febrero = monthTotal(user.id, 1, adminData.movements);

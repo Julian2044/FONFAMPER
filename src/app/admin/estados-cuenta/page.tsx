@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminStatementsPage() {
   const adminData = await getDemoAdminData();
-  const saverUsers = adminData.users.filter((user) => user.role === "AHORRADOR" && user.account);
+  const saverUsers = adminData.users.filter((user) => user.esAhorrador);
   const selectedUser = saverUsers[0] ?? adminData.users.find((user) => user.account) ?? null;
 
   const statementItems = saverUsers.map((user) => {

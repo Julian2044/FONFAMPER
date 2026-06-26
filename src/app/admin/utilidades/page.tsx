@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminUtilitiesPage() {
   const adminData = await getDemoAdminData();
   const eligibleUsers = adminData.users
-    .filter((user) => user.role === "AHORRADOR" && user.account)
+    .filter((user) => user.esAhorrador)
     .sort((left, right) => right.summary.currentBalance - left.summary.currentBalance);
   const lastMovement = adminData.recentOperations[0] ?? null;
 
