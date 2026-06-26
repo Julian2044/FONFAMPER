@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
@@ -18,87 +17,9 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { camilo } from "@/data/demo/camilo";
+import { getDemoAhorradorData } from "@/lib/fonfamper/ahorrador-data";
+import { formatCurrencyCOP, formatDate, formatDateTime } from "@/lib/fonfamper/format";
 import { cn } from "@/lib/utils";
-
-const personalData: Array<{
-  label: string;
-  value: string;
-  icon: LucideIcon;
-}> = [
-  { label: "Nombre completo", value: "Camilo Perez", icon: UserRound },
-  { label: "Correo electrónico", value: "camilo.perez@email.com", icon: Mail },
-  { label: "Celular", value: "+57 300 *** ** 45", icon: Phone },
-  { label: "Documento de identidad", value: "C.C. 1.234.*** ***", icon: KeyRound }
-];
-
-const securitySummary: Array<{
-  title: string;
-  description: string;
-  icon: LucideIcon;
-  status: ReactNode;
-}> = [
-  {
-    title: "Contraseña actualizada",
-    description: "Tu contraseña fue actualizada recientemente.",
-    icon: LockKeyhole,
-    status: (
-      <div className="text-right">
-        <Badge tone="green">Actualizada</Badge>
-        <p className="mt-2 text-xs font-semibold text-slate-500">Hace 8 días</p>
-      </div>
-    )
-  },
-  {
-    title: "Verificación en dos pasos",
-    description: "La verificación en dos pasos está activada.",
-    icon: ShieldCheck,
-    status: <Badge tone="green">Activada</Badge>
-  },
-  {
-    title: "Sesiones activas",
-    description: "Tienes 1 sesión activa en este momento.",
-    icon: MonitorSmartphone,
-    status: (
-      <div className="flex items-center gap-2 text-sm font-bold text-slate-600">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-[#004AAD] ring-1 ring-blue-100">1</span>
-        activa
-      </div>
-    )
-  },
-  {
-    title: "Último chequeo de seguridad",
-    description: "Revisamos tu cuenta en busca de actividad inusual.",
-    icon: CheckCircle2,
-    status: (
-      <div className="text-right">
-        <p className="text-sm font-extrabold text-slate-950">15 de mayo de 2025</p>
-        <p className="mt-1 text-xs font-semibold text-slate-500">Hace 3 días</p>
-      </div>
-    )
-  }
-];
-
-const recentAccesses = [
-  {
-    city: "Bogotá, Colombia",
-    device: "Chrome en Windows",
-    ip: "190.144.*** **",
-    time: "Ahora",
-    badge: "Actual",
-    icon: Chrome,
-    iconClassName: "bg-white text-[#004AAD] ring-1 ring-slate-200"
-  },
-  {
-    city: "Medellín, Colombia",
-    device: "Safari en iPhone",
-    ip: "181.60.*** **",
-    date: "14 de mayo de 2025",
-    time: "09:23 a. m.",
-    icon: Smartphone,
-    iconClassName: "bg-blue-50 text-[#004AAD]"
-  }
-];
 
 function IconBox({ icon: Icon, className }: { icon: LucideIcon; className?: string }) {
   return (
@@ -125,7 +46,7 @@ function ToggleVisual({ enabled }: { enabled: boolean }) {
 function ProfileAvatar() {
   return (
     <div
-      aria-label={`Avatar de ${camilo.name}`}
+      aria-label="Avatar de Camilo Perez"
       className="flex h-32 w-32 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 ring-8 ring-slate-50"
     >
       <UserRound className="h-16 w-16" />
@@ -133,7 +54,91 @@ function ProfileAvatar() {
   );
 }
 
-export default function SaverProfilePage() {
+export default async function SaverProfilePage() {
+  const demoData = await getDemoAhorradorData();
+  const profile = demoData.profile;
+  const account = demoData.account;
+  const latestMovement = demoData.latestMovement;
+  const profileName = profile?.full_name ?? "Camilo Perez";
+  const profileEmail = profile?.email ?? "camilo.perez@email.com";
+  const profilePhone = profile?.phone ?? "No registrado";
+  const profileDocument = profile?.document_id ?? "No registrado";
+  const profileRole = profile?.role ?? "AHORRADOR";
+  const profileStatus = profile?.status ?? "ACTIVO";
+  const profileCreatedAt = profile?.created_at ? formatDate(profile.created_at) : "No registrado";
+  const accountBalance = account?.current_balance ?? 0;
+  const activeSessions = demoData.notifications.length > 0 ? 1 : 0;
+  const lastSecurityCheck = latestMovement?.createdAt ? formatDateTime(latestMovement.createdAt) : "No registrado";
+  const personalData = [
+    { label: "Nombre completo", value: profileName, icon: UserRound },
+    { label: "Correo electrónico", value: profileEmail, icon: Mail },
+    { label: "Celular", value: profilePhone, icon: Phone },
+    { label: "Documento de identidad", value: profileDocument, icon: KeyRound }
+  ];
+
+  const securitySummary = [
+    {
+      title: "Contraseña actualizada",
+      description: `Tu perfil ${profileName} se cargó correctamente.`,
+      icon: LockKeyhole,
+      status: (
+        <div className="text-right">
+          <Badge tone="green">Actualizada</Badge>
+          <p className="mt-2 text-xs font-semibold text-slate-500">{profileStatus}</p>
+        </div>
+      )
+    },
+    {
+      title: "Verificación en dos pasos",
+      description: `Rol actual: ${profileRole}`,
+      icon: ShieldCheck,
+      status: <Badge tone="green">Activada</Badge>
+    },
+    {
+      title: "Sesiones activas",
+      description: `Tienes ${activeSessions} sesión activa en este momento.`,
+      icon: MonitorSmartphone,
+      status: (
+        <div className="flex items-center gap-2 text-sm font-bold text-slate-600">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-[#004AAD] ring-1 ring-blue-100">{activeSessions}</span>
+          activa
+        </div>
+      )
+    },
+    {
+      title: "Último chequeo de seguridad",
+      description: `Último movimiento: ${latestMovement?.concept ?? "Sin movimientos"}`,
+      icon: CheckCircle2,
+      status: (
+        <div className="text-right">
+          <p className="text-sm font-extrabold text-slate-950">{lastSecurityCheck}</p>
+          <p className="mt-1 text-xs font-semibold text-slate-500">{demoData.error ? "Revisar lectura" : "Datos reales"}</p>
+        </div>
+      )
+    }
+  ];
+
+  const recentAccesses = [
+    {
+      city: "Bogotá, Colombia",
+      device: `${profileRole} en navegador actual`,
+      ip: profileEmail,
+      time: demoData.error ? "Sin datos" : "Ahora",
+      badge: "Actual",
+      icon: Chrome,
+      iconClassName: "bg-white text-[#004AAD] ring-1 ring-slate-200"
+    },
+    {
+      city: "Medellín, Colombia",
+      device: "Sesión demo",
+      ip: profileDocument,
+      date: demoData.error ? "No registrado" : profileCreatedAt,
+      time: demoData.error ? "Sin lectura" : "09:23 a. m.",
+      icon: Smartphone,
+      iconClassName: "bg-blue-50 text-[#004AAD]"
+    }
+  ];
+
   return (
     <div className="space-y-8 min-w-0">
       <div>
@@ -149,13 +154,14 @@ export default function SaverProfilePage() {
               <ProfileAvatar />
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h3 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">{camilo.name}</h3>
+                  <h3 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">{profileName}</h3>
                   <Badge tone="green">Activo</Badge>
                 </div>
-                <div className="mt-5 flex items-center gap-3 text-sm font-semibold text-slate-500">
+                <div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-500">
                   <CalendarDays className="h-5 w-5 text-[#004AAD]" />
-                  <span>Miembro desde el 12 de marzo de 2020</span>
+                  <span>Miembro desde {profileCreatedAt}</span>
                 </div>
+                <p className="mt-3 text-sm font-semibold text-slate-500">Saldo actual {formatCurrencyCOP(accountBalance)}</p>
               </div>
             </div>
           </Card>
@@ -218,13 +224,15 @@ export default function SaverProfilePage() {
             </div>
             <div className="mt-2 divide-y divide-slate-100 px-6">
               {securitySummary.map(({ title, description, icon, status }) => (
-                <div key={title} className="grid gap-4 py-5 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
-                  <IconBox icon={icon} />
-                  <div className="min-w-0">
-                    <p className="text-sm font-extrabold text-slate-950">{title}</p>
-                    <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
+                <div key={title} className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 gap-4">
+                    <IconBox icon={icon} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-extrabold text-slate-950">{title}</p>
+                      <p className="mt-1 break-words text-sm leading-6 text-slate-500">{description}</p>
+                    </div>
                   </div>
-                  <div className="sm:justify-self-end">{status}</div>
+                  <div className="min-w-0 sm:text-right">{status}</div>
                 </div>
               ))}
             </div>
@@ -243,12 +251,12 @@ export default function SaverProfilePage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-extrabold text-slate-950">{city}</p>
+                      <p className="min-w-0 break-words font-extrabold text-slate-950">{city}</p>
                       {badge ? <Badge tone="green">{badge}</Badge> : null}
                     </div>
-                    <p className="mt-1 text-sm text-slate-500">{device}</p>
-                    <p className="mt-1 text-sm text-slate-500">IP: {ip}</p>
-                    {date ? <p className="mt-3 text-sm font-semibold text-slate-500">{date}</p> : null}
+                    <p className="mt-1 break-words text-sm text-slate-500">{device}</p>
+                    <p className="mt-1 break-words text-sm text-slate-500">IP: {ip}</p>
+                    {date ? <p className="mt-3 break-words text-sm font-semibold text-slate-500">{date}</p> : null}
                   </div>
                   <div className="shrink-0 text-left text-sm font-bold text-slate-500 sm:text-right">
                     <Clock3 className="ml-auto mb-2 h-4 w-4 text-slate-400" />

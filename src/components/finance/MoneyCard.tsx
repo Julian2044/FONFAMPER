@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { formatCOP } from "@/lib/format";
+import { formatCurrencyCOP } from "@/lib/fonfamper/format";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 
@@ -27,7 +27,7 @@ export function MoneyCard({ title, value, icon: Icon, tone = "blue", helper }: M
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-slate-500">{title}</p>
-          <p className="mt-3 whitespace-nowrap text-[24px] font-bold leading-none tracking-tight text-slate-950 sm:text-[30px]">{formatCOP(value)}</p>
+          <p className="mt-3 whitespace-nowrap text-[24px] font-bold leading-none tracking-tight text-slate-950 sm:text-[30px]">{formatCurrencyCOP(value)}</p>
           {helper ? <p className="mt-2 text-xs text-slate-500">{helper}</p> : null}
         </div>
       </div>

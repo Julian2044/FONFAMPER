@@ -1,5 +1,5 @@
 import type { Movement } from "@/types/finance";
-import { formatCOP, formatDate } from "@/lib/format";
+import { formatCurrencyCOP, formatDate } from "@/lib/fonfamper/format";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 
@@ -21,15 +21,22 @@ function typeTone(type: Movement["type"]) {
 }
 
 function formatMovementValue(value: number, type: Movement["type"]) {
-  if (value > 0 && type !== "Saldo inicial") return `+${formatCOP(value)}`;
-  return formatCOP(value);
+  if (value > 0 && type !== "Saldo inicial") return `+${formatCurrencyCOP(value)}`;
+  return formatCurrencyCOP(value);
 }
 
 export function MovementTable({ movements }: MovementTableProps) {
   return (
     <div className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-slate-200 bg-white">
       <div className="w-full min-w-0 max-w-full overflow-x-auto">
-        <table className="min-w-max divide-y divide-slate-200 text-left text-sm">
+        <table className="w-full min-w-full table-fixed divide-y divide-slate-200 text-left text-sm">
+          <colgroup>
+            <col className="w-[16%]" />
+            <col className="w-[32%]" />
+            <col className="w-[14%]" />
+            <col className="w-[19%]" />
+            <col className="w-[19%]" />
+          </colgroup>
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
               <th className="px-5 py-3 font-semibold">Fecha</th>
@@ -43,7 +50,7 @@ export function MovementTable({ movements }: MovementTableProps) {
             {movements.map((movement) => (
               <tr key={`${movement.date}-${movement.concept}`} className="hover:bg-slate-50">
                 <td className="whitespace-nowrap px-5 py-4 text-slate-600">{formatDate(movement.date)}</td>
-                <td className="px-5 py-4 font-medium text-slate-900">{movement.concept}</td>
+                <td className="break-words px-5 py-4 font-medium text-slate-900">{movement.concept}</td>
                 <td className="px-5 py-4">
                   <Badge tone={typeTone(movement.type)}>{movement.type}</Badge>
                 </td>
@@ -51,7 +58,7 @@ export function MovementTable({ movements }: MovementTableProps) {
                   {formatMovementValue(movement.value, movement.type)}
                 </td>
                 <td className="whitespace-nowrap px-5 py-4 text-right font-semibold text-slate-900">
-                  {formatCOP(movement.balance)}
+                  {formatCurrencyCOP(movement.balance)}
                 </td>
               </tr>
             ))}

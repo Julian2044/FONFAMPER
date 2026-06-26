@@ -5,13 +5,17 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { camiloAccount } from "@/data/demo/camilo";
-import { formatCOP } from "@/lib/format";
+import { getDemoAhorradorData } from "@/lib/fonfamper/ahorrador-data";
+import { formatCurrencyCOP, formatDate } from "@/lib/fonfamper/format";
 
 const filters = ["Todos", "Aportes", "Utilidades", "Retiros", "Ajustes"];
 
-export default function SaverMovementsPage() {
-  const { summary, movements } = camiloAccount;
+export default async function SaverMovementsPage() {
+  const demoData = await getDemoAhorradorData();
+  const summary = demoData.totals;
+  const movements = demoData.movements;
+  const latestMovement = demoData.latestMovement;
+  const hasData = movements.length > 0;
 
   return (
     <div className="space-y-8 min-w-0">
@@ -21,9 +25,9 @@ export default function SaverMovementsPage() {
       </div>
 
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <MoneyCard title="Total aportes" value={summary.januaryContribution} icon={ArrowUpRight} tone="green" />
-        <MoneyCard title="Total utilidades" value={summary.utilities} icon={ArrowUpRight} tone="gray" />
-        <MoneyCard title="Total retiros" value={summary.withdrawals} icon={ArrowUpRight} tone="red" />
+        <MoneyCard title="Total aportes" value={summary.totalContributions} icon={ArrowUpRight} tone="green" />
+        <MoneyCard title="Total utilidades" value={summary.totalUtilities} icon={ArrowUpRight} tone="gray" />
+        <MoneyCard title="Total retiros" value={summary.totalWithdrawals} icon={ArrowUpRight} tone="red" />
         <MoneyCard title="Saldo actual" value={summary.currentBalance} icon={ArrowUpRight} tone="blue" />
       </div>
 
@@ -56,7 +60,7 @@ export default function SaverMovementsPage() {
           </div>
 
           <div className="mt-5">
-            <MovementTable movements={movements} />
+            {hasData ? <MovementTable movements={movements} /> : <p className="text-sm text-slate-500">No se pudieron cargar movimientos reales.</p>}
           </div>
         </Card>
 
@@ -65,12 +69,12 @@ export default function SaverMovementsPage() {
           <div className="mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
             <ArrowUpRight className="h-7 w-7" />
           </div>
-          <p className="mt-5 text-xl font-extrabold text-slate-950">Aporte de enero</p>
-          <p className="mt-1 text-sm text-slate-500">15 ene 2023</p>
-          <p className="mt-6 text-3xl font-extrabold text-emerald-700">+{formatCOP(50000)}</p>
+          <p className="mt-5 text-xl font-extrabold text-slate-950">{latestMovement?.concept ?? "Sin movimientos"}</p>
+          <p className="mt-1 text-sm text-slate-500">{latestMovement ? formatDate(latestMovement.date) : "Sin fecha"}</p>
+          <p className="mt-6 text-3xl font-extrabold text-emerald-700">{latestMovement ? `+${formatCurrencyCOP(latestMovement.value)}` : formatCurrencyCOP(0)}</p>
           <div className="mt-6 space-y-4 text-sm">
-            <div className="flex justify-between"><span className="text-slate-500">Tipo</span><Badge tone="green">Aporte</Badge></div>
-            <div className="flex justify-between"><span className="text-slate-500">Saldo resultante</span><span className="font-bold text-slate-950">{formatCOP(950000)}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Tipo</span><Badge tone={latestMovement?.type === "Retiro" ? "red" : "green"}>{latestMovement?.type ?? "Aporte"}</Badge></div>
+            <div className="flex justify-between"><span className="text-slate-500">Saldo resultante</span><span className="font-bold text-slate-950">{formatCurrencyCOP(latestMovement?.balance ?? summary.currentBalance)}</span></div>
           </div>
           <Button variant="secondary" className="mt-8 w-full">
             <Download className="h-4 w-4" />

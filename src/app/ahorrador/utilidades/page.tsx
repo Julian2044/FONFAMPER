@@ -1,6 +1,8 @@
 import { Calculator, Coins, Landmark, PieChart, Wallet } from "lucide-react";
 import { MoneyCard } from "@/components/finance/MoneyCard";
 import { Card } from "@/components/ui/Card";
+import { getDemoAhorradorData } from "@/lib/fonfamper/ahorrador-data";
+import { formatCurrencyCOP, formatDate } from "@/lib/fonfamper/format";
 
 const steps = [
   ["Excedentes del periodo", "Se determinan los excedentes netos generados en el periodo contable.", Calculator],
@@ -9,7 +11,14 @@ const steps = [
   ["Distribución", "Las utilidades se acreditan en la cuenta individual de cada asociado.", Coins]
 ] as const;
 
-export default function SaverUtilitiesPage() {
+export default async function SaverUtilitiesPage() {
+  const demoData = await getDemoAhorradorData();
+  const account = demoData.account;
+  const latestMovement = demoData.latestMovement;
+  const currentBalance = account?.current_balance ?? 0;
+  const totalUtilities = account?.total_utilities ?? 0;
+  const lastMovementDate = latestMovement?.date ? formatDate(latestMovement.date) : "No registrado";
+
   return (
     <div className="space-y-8 min-w-0">
       <div>
@@ -18,14 +27,14 @@ export default function SaverUtilitiesPage() {
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <MoneyCard title="Total histórico" value={0} icon={Coins} tone="gray" helper="Desde el inicio" />
-        <MoneyCard title="Utilidad del periodo" value={0} icon={PieChart} tone="gray" helper="Ene 2023" />
+        <MoneyCard title="Total histórico" value={totalUtilities} icon={Coins} tone="gray" helper="Desde el inicio" />
+        <MoneyCard title="Utilidad del periodo" value={totalUtilities} icon={PieChart} tone="gray" helper="Sin distribución registrada" />
         <Card className="min-h-[168px]">
           <p className="text-sm font-semibold text-slate-500">Última distribución</p>
           <p className="mt-3 text-[24px] font-extrabold leading-none tracking-tight text-slate-950">Sin registrar</p>
           <p className="mt-2 text-xs text-slate-500">No hay distribuciones</p>
         </Card>
-        <MoneyCard title="Saldo base actual" value={950000} icon={Wallet} tone="blue" helper="Al 15 ene 2023" />
+        <MoneyCard title="Saldo base actual" value={currentBalance} icon={Wallet} tone="blue" helper={`Al ${lastMovementDate}`} />
       </div>
 
       <Card className="flex min-h-80 flex-col items-center justify-center text-center">
@@ -38,6 +47,9 @@ export default function SaverUtilitiesPage() {
         <h3 className="mt-6 text-2xl font-extrabold text-slate-950">Aún no tienes utilidades registradas</h3>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
           Las utilidades se generan al cierre de cada periodo contable. Cuando estén disponibles, podrás ver el detalle y el histórico aquí.
+        </p>
+        <p className="mt-3 max-w-2xl text-xs text-slate-500">
+          Saldo base cargado desde Supabase. Las utilidades se mostrarán cuando exista una distribución registrada.
         </p>
       </Card>
 

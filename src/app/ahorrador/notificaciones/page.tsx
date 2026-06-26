@@ -1,14 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
-  BarChart3,
   Bell,
   CheckCheck,
   ChevronRight,
   Download,
   FileText,
   Inbox,
-  LockKeyhole,
   MoreHorizontal,
   Settings2,
   ShieldCheck,
@@ -18,101 +16,11 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { getDemoAhorradorData } from "@/lib/fonfamper/ahorrador-data";
+import { formatDateTime } from "@/lib/fonfamper/format";
 import { cn } from "@/lib/utils";
 
-const stats: Array<{
-  title: string;
-  value: string;
-  helper: string;
-  icon: LucideIcon;
-  tone: "blue" | "green" | "orange";
-}> = [
-  { title: "Total notificaciones", value: "6", helper: "En tu bandeja", icon: Inbox, tone: "blue" },
-  { title: "Sin leer", value: "2", helper: "Requieren revisión", icon: Bell, tone: "green" },
-  { title: "Importantes", value: "1", helper: "Prioridad alta", icon: AlertTriangle, tone: "orange" },
-  { title: "Seguridad", value: "2", helper: "Eventos de acceso", icon: ShieldCheck, tone: "blue" }
-];
-
 const tabs = ["Todas", "No leídas", "Movimientos", "Seguridad", "Estados de cuenta"];
-
-const notifications: Array<{
-  type: string;
-  title: string;
-  text: string;
-  date: string;
-  state: "No leída" | "Leída";
-  icon: LucideIcon;
-  tone: "green" | "blue" | "gray";
-}> = [
-  {
-    type: "Movimiento",
-    title: "Nuevo aporte registrado",
-    text: "Se registró un aporte por $50.000 en tu cuenta. Tu nuevo saldo es $950.000.",
-    date: "15 ene 2023",
-    state: "No leída",
-    icon: WalletCards,
-    tone: "green"
-  },
-  {
-    type: "Estado de cuenta",
-    title: "Estado de cuenta disponible",
-    text: "Tu estado de cuenta de enero 2023 ya está disponible para consulta y descarga.",
-    date: "15 ene 2023",
-    state: "No leída",
-    icon: FileText,
-    tone: "blue"
-  },
-  {
-    type: "Seguridad",
-    title: "Inicio de sesión exitoso",
-    text: "Se detectó un inicio de sesión desde Chrome en Windows.",
-    date: "Ahora",
-    state: "Leída",
-    icon: ShieldCheck,
-    tone: "blue"
-  },
-  {
-    type: "Perfil",
-    title: "Datos personales protegidos",
-    text: "Tu información personal está protegida y solo puede ser modificada con validación.",
-    date: "Hace 2 días",
-    state: "Leída",
-    icon: UserRound,
-    tone: "gray"
-  },
-  {
-    type: "Utilidades",
-    title: "Utilidades sin registrar",
-    text: "Aún no tienes utilidades asignadas para el periodo actual.",
-    date: "Ene 2023",
-    state: "Leída",
-    icon: BarChart3,
-    tone: "blue"
-  },
-  {
-    type: "Seguridad",
-    title: "Verificación en dos pasos activada",
-    text: "Tu cuenta cuenta con una capa adicional de protección.",
-    date: "Hace 8 días",
-    state: "Leída",
-    icon: LockKeyhole,
-    tone: "blue"
-  }
-];
-
-const summaryRows = [
-  ["No leídas", "2"],
-  ["Movimientos", "1"],
-  ["Seguridad", "2"],
-  ["Estados de cuenta", "1"]
-] as const;
-
-const preferences = [
-  ["Notificar nuevos aportes", true],
-  ["Notificar estados de cuenta", true],
-  ["Notificar accesos de seguridad", true],
-  ["Resumen mensual por correo", false]
-] as const;
 
 const statTones = {
   blue: "bg-blue-50 text-[#004AAD]",
@@ -126,7 +34,15 @@ const notificationTones = {
   gray: "bg-slate-100 text-slate-600"
 };
 
-function NotificationStatCard({ title, value, helper, icon: Icon, tone }: (typeof stats)[number]) {
+type NotificationStatCardProps = {
+  title: string;
+  value: string;
+  helper: string;
+  icon: LucideIcon;
+  tone: "blue" | "green" | "orange";
+};
+
+function NotificationStatCard({ title, value, helper, icon: Icon, tone }: NotificationStatCardProps) {
   return (
     <Card className="min-h-[168px]">
       <div className="flex min-w-0 items-start gap-4">
@@ -157,7 +73,31 @@ function SwitchVisual({ enabled }: { enabled: boolean }) {
   );
 }
 
-export default function SaverNotificationsPage() {
+export default async function SaverNotificationsPage() {
+  const demoData = await getDemoAhorradorData();
+  const notifications = demoData.notifications;
+  const unreadCount = demoData.unreadNotificationsCount;
+  const stats = [
+    { title: "Total notificaciones", value: String(notifications.length), helper: "En tu bandeja", icon: Inbox, tone: "blue" as const },
+    { title: "Sin leer", value: String(unreadCount), helper: "Requieren revisión", icon: Bell, tone: "green" as const },
+    { title: "Importantes", value: String(notifications.filter((notification) => notification.type === "Seguridad").length), helper: "Prioridad alta", icon: AlertTriangle, tone: "orange" as const },
+    { title: "Seguridad", value: String(notifications.filter((notification) => notification.type === "Seguridad").length), helper: "Eventos de acceso", icon: ShieldCheck, tone: "blue" as const }
+  ];
+
+  const summaryRows = [
+    ["No leídas", String(unreadCount)],
+    ["Movimientos", String(notifications.filter((notification) => notification.type === "Movimiento").length)],
+    ["Seguridad", String(notifications.filter((notification) => notification.type === "Seguridad").length)],
+    ["Estados de cuenta", String(notifications.filter((notification) => notification.type === "Estado de cuenta").length)]
+  ] as const;
+
+  const preferences = [
+    ["Notificar nuevos aportes", true],
+    ["Notificar estados de cuenta", true],
+    ["Notificar accesos de seguridad", true],
+    ["Resumen mensual por correo", false]
+  ] as const;
+
   return (
     <div className="space-y-8 min-w-0">
       <div>
@@ -192,11 +132,25 @@ export default function SaverNotificationsPage() {
           </div>
 
           <div className="mt-4 divide-y divide-slate-100">
-            {notifications.map(({ type, title, text, date, state, icon: Icon, tone }) => {
-              const unread = state === "No leída";
+            {notifications.map(({ title, message, type, isRead, createdAt }) => {
+              const unread = !isRead;
+              const iconMap: Record<string, LucideIcon> = {
+                Movimiento: WalletCards,
+                "Estado de cuenta": FileText,
+                Seguridad: ShieldCheck,
+                Perfil: UserRound
+              };
+              const toneMap: Record<string, "green" | "blue" | "gray"> = {
+                Movimiento: "green",
+                "Estado de cuenta": "blue",
+                Seguridad: "blue",
+                Perfil: "gray"
+              };
+              const Icon = iconMap[type] ?? ShieldCheck;
+              const tone = toneMap[type] ?? "blue";
 
               return (
-                <div key={title} className={cn("relative flex flex-col gap-4 px-6 py-5 sm:flex-row", unread ? "bg-blue-50/60" : "bg-white")}>
+                <div key={`${title}-${createdAt}`} className={cn("relative flex flex-col gap-4 px-6 py-5 sm:flex-row", unread ? "bg-blue-50/60" : "bg-white")}>
                   {unread ? <span className="absolute left-0 top-5 h-12 w-1 rounded-r-full bg-[#0A5FD8]" /> : null}
                   <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl", notificationTones[tone])}>
                     <Icon className="h-5 w-5" />
@@ -204,13 +158,13 @@ export default function SaverNotificationsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-xs font-extrabold uppercase text-[#004AAD]">{type}</p>
-                      <Badge tone={unread ? "blue" : "gray"}>{state}</Badge>
+                      <Badge tone={unread ? "blue" : "gray"}>{unread ? "No leída" : "Leída"}</Badge>
                     </div>
                     <p className="mt-2 text-base font-extrabold text-slate-950">{title}</p>
-                    <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">{text}</p>
+                    <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">{message}</p>
                   </div>
                   <div className="flex shrink-0 flex-row items-center justify-between gap-4 text-right sm:flex-col sm:items-end sm:justify-between">
-                    <p className="text-sm font-bold text-slate-500">{date}</p>
+                    <p className="text-sm font-bold text-slate-500">{formatDateTime(createdAt)}</p>
                     <button type="button" aria-label={`Opciones para ${title}`} className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
                       <MoreHorizontal className="h-5 w-5" />
                     </button>
