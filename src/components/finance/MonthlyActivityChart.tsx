@@ -2,10 +2,10 @@
 
 import { MoreHorizontal } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { formatCOP } from "@/lib/format";
+import { formatCurrencyCOP } from "@/lib/fonfamper/format";
 import { Card } from "@/components/ui/Card";
 
-const data = [
+const fallbackData = [
   { month: "Ene", value: 950000 },
   { month: "Feb", value: 1150000 },
   { month: "Mar", value: 1280000 },
@@ -20,7 +20,14 @@ const data = [
   { month: "Dic", value: 1650000 }
 ];
 
-export function MonthlyActivityChart() {
+type MonthlyActivityChartProps = {
+  data?: Array<{
+    month: string;
+    value: number;
+  }>;
+};
+
+export function MonthlyActivityChart({ data = fallbackData }: MonthlyActivityChartProps) {
   return (
     <Card className="min-h-[420px] p-5 sm:p-6">
       <div className="flex min-w-0 flex-col justify-between gap-4 sm:flex-row sm:items-start">
@@ -46,7 +53,7 @@ export function MonthlyActivityChart() {
             <YAxis width={46} tickFormatter={(value) => `$${Number(value) / 1000}k`} tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
             <Tooltip
               cursor={{ fill: "rgba(219, 234, 254, 0.35)" }}
-              formatter={(value) => formatCOP(Number(value))}
+              formatter={(value) => formatCurrencyCOP(Number(value))}
               contentStyle={{ borderRadius: 16, borderColor: "#e2e8f0", boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
             />
             <Bar dataKey="value" fill="#0057d9" maxBarSize={34} radius={[8, 8, 0, 0]} />

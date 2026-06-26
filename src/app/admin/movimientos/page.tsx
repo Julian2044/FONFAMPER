@@ -1,17 +1,35 @@
-"use client";
-
-import Link from "next/link";
-import { useState } from "react";
 import { CalendarDays, CheckCircle2, CloudUpload, DollarSign, FileText, Save, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { DataTable } from "@/components/ui/DataTable";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { formatCOP } from "@/lib/format";
+import { getDemoAdminData } from "@/lib/fonfamper/admin-data";
+import { formatCurrencyCOP, formatDate } from "@/lib/fonfamper/format";
 
-export default function AdminMovementsPage() {
-  const [ready, setReady] = useState(false);
+export const dynamic = "force-dynamic";
+
+function movementLabel(type: "SALDO_INICIAL" | "APORTE" | "RETIRO" | "AJUSTE") {
+  switch (type) {
+    case "APORTE":
+      return "Aporte";
+    case "RETIRO":
+      return "Retiro";
+    case "AJUSTE":
+      return "Ajuste";
+    case "SALDO_INICIAL":
+      return "Saldo inicial";
+    default:
+      return type;
+  }
+}
+
+export default async function AdminMovementsPage() {
+  const adminData = await getDemoAdminData();
+  const selectedUser = adminData.users.find((user) => user.role === "AHORRADOR") ?? adminData.users[0] ?? null;
+  const latestMovement = selectedUser?.recentMovements[0] ?? null;
+  const latestMovementDate = latestMovement?.movementDate ?? adminData.timeline.latestMovementDate ?? new Date().toISOString();
 
   return (
     <div className="space-y-8 min-w-0">
@@ -20,6 +38,12 @@ export default function AdminMovementsPage() {
         <p className="mt-2 text-base text-slate-500">Agrega aportes, retiros o ajustes a una cuenta</p>
       </div>
 
+      {adminData.error ? (
+        <Card className="border-amber-200 bg-amber-50 text-amber-900">
+          <p className="text-sm font-semibold">No se pudieron cargar algunos datos administrativos.</p>
+        </Card>
+      ) : null}
+
       <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
         <Card>
           <div className="grid gap-5 md:grid-cols-2">
@@ -27,8 +51,12 @@ export default function AdminMovementsPage() {
               <span className="mb-2 block text-sm font-bold text-slate-700">Usuario</span>
               <div className="relative">
                 <UserRound className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                <Select className="pl-10" defaultValue="camilo">
-                  <option value="camilo">Camilo Perez</option>
+                <Select className="pl-10" defaultValue={selectedUser?.id ?? ""}>
+                  {adminData.users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.fullName}
+                    </option>
+                  ))}
                 </Select>
               </div>
             </label>
@@ -41,26 +69,26 @@ export default function AdminMovementsPage() {
               </Select>
             </label>
             <label>
-              <span className="mb-2 block text-sm font-bold text-slate-700">Fecha</span>
-              <div className="relative">
-                <CalendarDays className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                <Input className="pl-10" defaultValue="15/01/2023" />
-              </div>
-            </label>
-            <label>
-              <span className="mb-2 block text-sm font-bold text-slate-700">Valor</span>
-              <div className="relative">
-                <DollarSign className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                <Input className="pl-10" defaultValue="$50.000" />
-              </div>
-            </label>
-            <label className="md:col-span-2">
-              <span className="mb-2 block text-sm font-bold text-slate-700">Descripción</span>
-              <div className="relative">
-                <FileText className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                <Input className="pl-10" defaultValue="Aporte de enero" />
-              </div>
-            </label>
+                <span className="mb-2 block text-sm font-bold text-slate-700">Fecha</span>
+                <div className="relative">
+                  <CalendarDays className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                  <Input className="pl-10" defaultValue={formatDate(latestMovementDate)} />
+                </div>
+              </label>
+              <label>
+                <span className="mb-2 block text-sm font-bold text-slate-700">Valor</span>
+                <div className="relative">
+                  <DollarSign className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                  <Input className="pl-10" defaultValue={formatCurrencyCOP(latestMovement?.amount ?? 0)} />
+                </div>
+              </label>
+              <label className="md:col-span-2">
+                <span className="mb-2 block text-sm font-bold text-slate-700">Descripción</span>
+                <div className="relative">
+                  <FileText className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                  <Input className="pl-10" defaultValue={latestMovement?.concept ?? "Movimiento de lectura"} />
+                </div>
+              </label>
             <label className="md:col-span-2">
               <span className="mb-2 block text-sm font-bold text-slate-700">Observaciones opcional</span>
               <Input placeholder="Agregar observaciones internas" />
@@ -81,11 +109,11 @@ export default function AdminMovementsPage() {
             <div className="mt-5 space-y-4 text-sm">
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Saldo anterior</span>
-                <span className="whitespace-nowrap font-bold text-slate-950">{formatCOP(900000)}</span>
+                <span className="whitespace-nowrap font-bold text-slate-950">{formatCurrencyCOP(selectedUser?.summary.initialBalance ?? 0)}</span>
               </div>
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Nuevo saldo</span>
-                <span className="whitespace-nowrap font-bold text-[#0057d9]">{formatCOP(950000)}</span>
+                <span className="whitespace-nowrap font-bold text-[#0057d9]">{formatCurrencyCOP(selectedUser?.summary.currentBalance ?? 0)}</span>
               </div>
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Estado</span>
@@ -93,30 +121,75 @@ export default function AdminMovementsPage() {
               </div>
             </div>
             <div className="mt-6 rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-slate-600">
-              Este movimiento se aplicará de inmediato a la cuenta del usuario seleccionado.
+              Registro real pendiente de fase CRUD. Este movimiento solo es una vista previa de lectura.
+            </div>
+          </Card>
+
+          <Card>
+            <h3 className="text-lg font-extrabold text-slate-950">Movimientos recientes</h3>
+            <div className="mt-5 space-y-3">
+              {selectedUser?.recentMovements.map((movement) => (
+                <div key={movement.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="break-words text-sm font-extrabold text-slate-950">{movement.concept}</p>
+                      <p className="mt-1 text-xs text-slate-500">{formatDate(movement.movementDate)}</p>
+                    </div>
+                    <Badge tone={movement.movementType === "RETIRO" ? "red" : "green"}>{movementLabel(movement.movementType)}</Badge>
+                  </div>
+                  <div className="mt-4 grid gap-3 text-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500">Monto</span>
+                      <span className="whitespace-nowrap font-bold text-slate-950">{formatCurrencyCOP(movement.amount)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500">Saldo resultante</span>
+                      <span className="whitespace-nowrap font-bold text-slate-950">{formatCurrencyCOP(movement.balanceAfter)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </Card>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Link href="/admin/dashboard" className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-white px-4 text-sm font-semibold text-[#004aad] ring-1 ring-[#0057d9]/25 transition hover:bg-blue-50">
+            <Button variant="secondary" className="w-full">
               Cancelar
-            </Link>
-            <Button className="w-full" onClick={() => setReady(true)}>
+            </Button>
+            <Button className="w-full">
               <Save className="h-4 w-4" />
               Registrar movimiento
             </Button>
           </div>
 
-          <Card className={ready ? "bg-emerald-50" : "bg-blue-50/60"}>
+          <Card className="bg-blue-50/60">
             <div className="flex gap-3">
-              <CheckCircle2 className={ready ? "h-5 w-5 text-emerald-700" : "h-5 w-5 text-[#0057d9]"} />
-              <p className={ready ? "text-sm font-medium text-emerald-800" : "text-sm font-medium text-slate-600"}>
-                {ready ? "Movimiento listo para registrar. Demo visual sin guardado real." : "Vista previa con datos demo locales, sin guardado real."}
-              </p>
+              <CheckCircle2 className="h-5 w-5 text-[#0057d7]" />
+              <p className="text-sm font-medium text-slate-600">Vista previa con datos reales de lectura, sin guardado real.</p>
             </div>
           </Card>
         </div>
       </div>
+
+      <Card>
+        <h3 className="text-lg font-extrabold text-slate-950">Detalle de movimientos del usuario</h3>
+        <div className="mt-5">
+          <DataTable
+            columns={["Fecha", "Descripción", "Tipo", "Monto", "Saldo resultante"]}
+            rows={(selectedUser?.recentMovements ?? []).map((movement) => [
+              formatDate(movement.movementDate),
+              movement.concept,
+              movementLabel(movement.movementType),
+              <span key="amount" className="whitespace-nowrap font-bold text-slate-950">
+                {formatCurrencyCOP(movement.amount)}
+              </span>,
+              <span key="balance" className="whitespace-nowrap font-bold text-slate-950">
+                {formatCurrencyCOP(movement.balanceAfter)}
+              </span>
+            ])}
+          />
+        </div>
+      </Card>
     </div>
   );
 }

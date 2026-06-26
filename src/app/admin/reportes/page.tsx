@@ -1,17 +1,12 @@
-import { BarChart3, Download, FileClock, FileSpreadsheet, PieChart, ShieldCheck, TrendingUp, UsersRound, Wallet } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
+import { BarChart3, Download, FileClock, PieChart, ShieldCheck, TrendingUp, UsersRound, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { DataTable } from "@/components/ui/DataTable";
+import { getDemoAdminData } from "@/lib/fonfamper/admin-data";
+import { formatDateTime } from "@/lib/fonfamper/format";
 
-const metrics = [
-  ["Reportes disponibles", "6"],
-  ["Exportaciones este mes", "4"],
-  ["Último reporte", "Aportes del mes"],
-  ["Estado", "Actualizado"]
-] as const;
+export const dynamic = "force-dynamic";
 
-const reports = [
+const reportCards = [
   ["Reporte de aportes", "Detalle de aportes registrados por periodo y usuario.", TrendingUp],
   ["Reporte de saldos", "Resumen de saldos iniciales, finales y variaciones.", Wallet],
   ["Reporte de usuarios activos", "Usuarios activos, registrados y estado de acceso.", UsersRound],
@@ -20,13 +15,9 @@ const reports = [
   ["Reporte de auditoría", "Cambios, accesos y eventos del sistema.", ShieldCheck]
 ] as const;
 
-const historyRows = [
-  ["14 may 2024", "Aportes del mes", "Sonia Perez", "Excel", "Completado", "Descargar"],
-  ["13 may 2024", "Saldos generales", "Sonia Perez", "PDF", "Completado", "Descargar"],
-  ["12 may 2024", "Auditoría", "Sonia Perez", "Excel", "Completado", "Descargar"]
-] as const;
+export default async function AdminReportsPage() {
+  const adminData = await getDemoAdminData();
 
-export default function AdminReportsPage() {
   return (
     <div className="space-y-8 min-w-0">
       <div>
@@ -35,17 +26,27 @@ export default function AdminReportsPage() {
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {metrics.map(([label, value]) => (
-          <Card key={label} className="min-h-[132px]">
-            <p className="text-sm font-semibold text-slate-500">{label}</p>
-            <p className="mt-3 whitespace-nowrap text-[24px] font-extrabold leading-none tracking-tight text-slate-950 sm:text-[30px]">{value}</p>
-          </Card>
-        ))}
+        <Card className="min-h-[132px]">
+          <p className="text-sm font-semibold text-slate-500">Reportes disponibles</p>
+          <p className="mt-3 whitespace-nowrap text-[22px] font-extrabold leading-none tracking-tight text-slate-950 sm:text-[30px]">6</p>
+        </Card>
+        <Card className="min-h-[132px]">
+          <p className="text-sm font-semibold text-slate-500">Exportaciones este mes</p>
+          <p className="mt-3 whitespace-nowrap text-[22px] font-extrabold leading-none tracking-tight text-slate-950 sm:text-[30px]">0</p>
+        </Card>
+        <Card className="min-h-[132px]">
+          <p className="text-sm font-semibold text-slate-500">Último reporte</p>
+          <p className="mt-3 break-words text-[22px] font-extrabold leading-none tracking-tight text-slate-950 sm:text-[30px]">Sin generar</p>
+        </Card>
+        <Card className="min-h-[132px]">
+          <p className="text-sm font-semibold text-slate-500">Estado</p>
+          <p className="mt-3 break-words text-[22px] font-extrabold leading-none tracking-tight text-slate-950 sm:text-[30px]">Actualizado</p>
+        </Card>
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        {reports.map(([title, description, Icon]) => (
-          <Card key={title}>
+        {reportCards.map(([title, description, Icon]) => (
+          <Card key={title} className="overflow-hidden">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#0057d9]">
               <Icon className="h-6 w-6" />
             </div>
@@ -66,18 +67,11 @@ export default function AdminReportsPage() {
       </div>
 
       <Card className="min-w-0">
-        <h3 className="mb-5 text-lg font-extrabold text-slate-950">Historial de reportes generados</h3>
-        <DataTable
-          columns={["Fecha", "Reporte", "Usuario", "Formato", "Estado", "Acción"]}
-          rows={historyRows.map(([date, report, user, format, status, action]) => [
-            date,
-            <span key="report" className="font-bold text-slate-950">{report}</span>,
-            user,
-            <span key="format" className="inline-flex items-center gap-2"><FileSpreadsheet className="h-4 w-4 text-[#0057d9]" />{format}</span>,
-            <Badge key="status" tone="green">{status}</Badge>,
-            <button key="action" type="button" className="font-extrabold text-[#0057d9]">{action}</button>
-          ])}
-        />
+        <h3 className="text-lg font-extrabold text-slate-950">Historial de reportes generados</h3>
+        <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+          No hay reportes generados todavía. El historial real se activará cuando exista fase de exportaciones.
+          <span className="mt-2 block text-xs text-slate-400">Fecha de referencia: {formatDateTime(adminData.timeline.reportIssuedAt)}</span>
+        </div>
       </Card>
     </div>
   );

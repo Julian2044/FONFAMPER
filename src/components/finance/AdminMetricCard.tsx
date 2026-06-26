@@ -26,9 +26,9 @@ export function AdminMetricCard({ title, value, helper, trend, icon: Icon, tone 
           <Icon className="h-6 w-6" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-slate-500">{title}</p>
-          <p className="mt-3 whitespace-nowrap text-[24px] font-extrabold leading-none tracking-tight text-slate-950 sm:text-[30px]">{value}</p>
-          <p className="mt-2 text-sm text-slate-500">{helper}</p>
+          <p className="break-words text-sm font-semibold leading-5 text-slate-500">{title}</p>
+          <p className="mt-3 whitespace-nowrap text-[22px] font-extrabold leading-none tracking-tight text-slate-950 sm:text-[30px]">{value}</p>
+          <p className="mt-2 break-words text-sm text-slate-500">{helper}</p>
           {trend ? <p className="mt-3 text-xs font-bold text-emerald-700">{trend}</p> : null}
         </div>
       </div>
