@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Ban, FileText, MoreHorizontal, Pencil, PlusCircle, Search } from "lucide-react";
+import { ArrowLeft, Ban, FileText, MoreHorizontal, Pencil, PlusCircle, Search, X } from "lucide-react";
+import { AdminCreateSaverForm } from "@/components/admin/AdminCreateSaverForm";
 import { AvatarPlaceholder } from "@/components/ui/AvatarPlaceholder";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -19,7 +20,7 @@ type AdminUsersClientProps = {
 };
 
 function roleLabel(role: AdminUserData["role"]) {
-  return role === "ADMIN" ? "Administradora" : "Ahorrador";
+  return role === "ADMIN" ? "Administrador" : "Ahorrador";
 }
 
 function roleTone(role: AdminUserData["role"]) {
@@ -41,9 +42,14 @@ function movementLabel(type: AdminUserData["recentMovements"][number]["movementT
   }
 }
 
+function accessLabel(user: AdminUserData) {
+  return user.authUserId ? "Acceso activo" : "Acceso pendiente";
+}
+
 export function AdminUsersClient({ users }: AdminUsersClientProps) {
   const [selectedUserName, setSelectedUserName] = useState(users.find((user) => user.esAhorrador)?.fullName ?? users[0]?.fullName ?? "");
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
+  const [createPanelOpen, setCreatePanelOpen] = useState(false);
 
   const selectedUser = useMemo(
     () => users.find((user) => user.fullName === selectedUserName) ?? users[0] ?? null,
@@ -64,9 +70,29 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
   return (
     <div className="space-y-8 min-w-0 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-0">
       <div className="min-w-0">
-        <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">Usuarios</h2>
-        <p className="mt-2 text-base text-slate-500">Administra cuentas y consulta su estado.</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">Usuarios</h2>
+            <p className="mt-2 text-base text-slate-500">Administra usuarios, roles y cuentas de ahorro.</p>
+          </div>
+          <Button type="button" className="w-full sm:w-auto" onClick={() => setCreatePanelOpen(true)}>
+            <PlusCircle className="h-4 w-4" />
+            Nuevo usuario
+          </Button>
+        </div>
       </div>
+
+      {createPanelOpen ? (
+        <div className="space-y-3">
+          <div className="flex justify-end">
+            <Button type="button" variant="ghost" onClick={() => setCreatePanelOpen(false)}>
+              <X className="h-4 w-4" />
+              Cerrar
+            </Button>
+          </div>
+          <AdminCreateSaverForm />
+        </div>
+      ) : null}
 
       <div className="grid min-w-0 gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
         <Card className={cn("min-w-0", showMobileList ? "block" : "hidden lg:block")}>
@@ -152,7 +178,18 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
                     )}
                   >
                     <span className={cn("h-2.5 w-2.5 rounded-full", selectedUser.esAhorrador ? "bg-emerald-600" : "bg-slate-400")} />
-                    {selectedUser.esAhorrador ? "Ahorro habilitado" : "Sin ahorro"}
+                    {selectedUser.esAhorrador ? "Ahorro habilitado" : "Sin cuenta de ahorro"}
+                  </span>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1",
+                      selectedUser.authUserId
+                        ? "bg-blue-50 text-[#004aad] ring-blue-100"
+                        : "bg-amber-50 text-amber-700 ring-amber-100"
+                    )}
+                  >
+                    <span className={cn("h-2.5 w-2.5 rounded-full", selectedUser.authUserId ? "bg-[#004aad]" : "bg-amber-500")} />
+                    {accessLabel(selectedUser)}
                   </span>
                 </div>
               </div>
@@ -201,6 +238,10 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
             <div>
               <p className="text-xs font-bold uppercase text-slate-400">Estado</p>
               <p className="mt-1 font-bold text-slate-950">{selectedUser.status}</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase text-slate-400">Acceso</p>
+              <p className="mt-1 font-bold text-slate-950">{accessLabel(selectedUser)}</p>
             </div>
           </div>
 

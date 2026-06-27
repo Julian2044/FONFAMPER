@@ -17,6 +17,7 @@ type QueryIssue = {
 
 export type AdminUserData = {
   id: string;
+  authUserId: string | null;
   fullName: string;
   email: string;
   phone: string | null;
@@ -224,6 +225,7 @@ function buildUserRows(profiles: ProfileRow[], accounts: AccountRow[], movements
 
     return {
       id: profile.id,
+      authUserId: profile.auth_user_id,
       fullName: profile.full_name,
       email: profile.email,
       phone: profile.phone,

@@ -36,7 +36,7 @@ function parseAmount(rawValue: FormDataEntryValue | null) {
     return null;
   }
 
-  const amount = Number(rawValue);
+  const amount = Number(rawValue.replace(/[^\d]/g, ""));
   return Number.isFinite(amount) ? amount : null;
 }
 

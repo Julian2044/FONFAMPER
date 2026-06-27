@@ -40,9 +40,23 @@ function formatInputDate(value: string) {
 }
 
 function parseAmount(value: string) {
-  const cleaned = value.replace(/[^\d.-]/g, "");
+  const cleaned = value.replace(/\D/g, "");
   const amount = Number(cleaned);
   return Number.isFinite(amount) ? amount : 0;
+}
+
+function cleanMoneyInput(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+function formatMoneyInput(value: string) {
+  const cleaned = cleanMoneyInput(value);
+
+  if (!cleaned) {
+    return "";
+  }
+
+  return `$ ${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 }).format(Number(cleaned))}`;
 }
 
 function SubmitButton() {
@@ -68,10 +82,11 @@ export function AdminMovementForm({ users }: AdminMovementFormProps) {
   const [description, setDescription] = useState("");
   const [observations, setObservations] = useState("");
 
-  const selectedUser = users.find((user) => user.id === selectedUserId) ?? initialUser;
+  const selectedUser = saverUsers.find((user) => user.id === selectedUserId) ?? initialUser;
   const currentBalance = selectedUser?.summary.currentBalance ?? 0;
   const initialBalance = selectedUser?.summary.initialBalance ?? 0;
   const parsedAmount = parseAmount(amount);
+  const cleanAmount = cleanMoneyInput(amount);
   const previewBalance =
     movementType === "RETIRO"
       ? currentBalance - parsedAmount
@@ -103,12 +118,6 @@ export function AdminMovementForm({ users }: AdminMovementFormProps) {
                 </Select>
               </div>
               {saverUsers.length === 0 ? <p className="mt-2 text-xs font-semibold text-amber-600">No hay personas habilitadas como ahorradoras.</p> : null}
-              {selectedUser ? (
-                <div className="mt-2 space-y-1 text-xs font-semibold text-slate-500">
-                  <p>Saldo actual: {formatCurrencyCOP(selectedUser.summary.currentBalance)}</p>
-                  <p>Perfil de ahorro: {selectedUser.account ? "Habilitado" : "No habilitado"}</p>
-                </div>
-              ) : null}
             </label>
 
             <label>
@@ -142,16 +151,14 @@ export function AdminMovementForm({ users }: AdminMovementFormProps) {
               <div className="relative">
                 <DollarSign className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-slate-400" />
                 <Input
-                  name="amount"
                   className="pl-10"
-                  type="number"
-                  min="0"
-                  step="1"
+                  type="text"
                   inputMode="numeric"
-                  placeholder="100000"
+                  placeholder="$ 100.000"
                   value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
+                  onChange={(event) => setAmount(formatMoneyInput(event.target.value))}
                 />
+                <input type="hidden" name="amount" value={cleanAmount} />
               </div>
             </label>
 
@@ -218,6 +225,10 @@ export function AdminMovementForm({ users }: AdminMovementFormProps) {
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Saldo inicial</span>
                 <span className="whitespace-nowrap font-bold text-slate-950">{formatCurrencyCOP(initialBalance)}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-slate-500">Perfil de ahorro</span>
+                <span className="font-bold text-slate-950">{selectedUser?.account ? "Habilitado" : "No habilitado"}</span>
               </div>
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Nuevo saldo estimado</span>
