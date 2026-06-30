@@ -9,6 +9,7 @@ import type { Database } from "@/lib/supabase/types";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type AdminSupabaseClient = ReturnType<typeof createSupabaseAdminClient>;
+type ServerSupabaseClient = ReturnType<typeof createClientServer>;
 type AuthUserSummary = {
   id: string;
   email?: string | null;
@@ -27,6 +28,15 @@ const ADMIN_REVALIDATION_PATHS = [
 
 function redirectWithError(message: string): never {
   redirect(`/admin/usuarios?error=${encodeURIComponent(message)}`);
+}
+
+function redirectWithSuccess(success: string, profileId: string): never {
+  const query = new URLSearchParams({
+    success,
+    profile_id: profileId
+  });
+
+  redirect(`/admin/usuarios?${query.toString()}`);
 }
 
 function createAdminClientForAction() {
@@ -132,6 +142,39 @@ async function requireActiveAdminProfile(adminSupabase: AdminSupabaseClient, aut
   return adminProfile;
 }
 
+async function requireActiveAdminProfileWithSession(supabase: ServerSupabaseClient, actionLabel: string) {
+  const {
+    data: { user },
+    error: authError
+  } = await supabase.auth.getUser();
+
+  if (authError) {
+    console.error("[admin-usuarios] get user", authError);
+  }
+
+  if (!user) {
+    redirectWithError(`Debes iniciar sesion para ${actionLabel}.`);
+  }
+
+  const { data: adminProfile, error: adminProfileError } = await supabase
+    .schema("public")
+    .from("profiles")
+    .select("*")
+    .eq("auth_user_id", user.id)
+    .maybeSingle<ProfileRow>();
+
+  if (adminProfileError) {
+    console.error("[admin-usuarios] current admin profile", adminProfileError);
+    redirectWithError(adminProfileError.message || "No fue posible validar el perfil administrador.");
+  }
+
+  if (!isAdminActive(adminProfile)) {
+    redirectWithError(`Solo un administrador activo puede ${actionLabel}.`);
+  }
+
+  return adminProfile;
+}
+
 async function findAuthUserByEmail(adminSupabase: AdminSupabaseClient, email: string) {
   const normalizedEmail = email.trim().toLowerCase();
   let page = 1;
@@ -209,6 +252,83 @@ export async function createInternalUserProfileAction(formData: FormData) {
   const profileId = typeof data === "object" && data && "profile_id" in data ? String((data as { profile_id?: unknown }).profile_id ?? "") : "";
   const successQuery = profileId ? `success=user_created&profile_id=${encodeURIComponent(profileId)}` : "success=user_created";
   redirect(`/admin/usuarios?${successQuery}`);
+}
+
+export async function updateInternalUserAction(formData: FormData) {
+  const supabase = createClientServer();
+  await requireActiveAdminProfileWithSession(supabase, "editar usuarios");
+
+  const profileId = textValue(formData, "profile_id");
+  const fullName = textValue(formData, "full_name");
+  const phone = nullableTextValue(formData, "phone");
+  const documentId = nullableTextValue(formData, "document_id");
+  const roleValue = textValue(formData, "role").toUpperCase();
+  const status = textValue(formData, "status").toUpperCase();
+
+  if (!profileId) {
+    redirectWithError("Selecciona un usuario valido.");
+  }
+
+  if (!fullName) {
+    redirectWithError("El nombre completo es obligatorio.");
+  }
+
+  if (!["ADMIN", "AHORRADOR"].includes(roleValue)) {
+    redirectWithError("El rol debe ser ADMIN o AHORRADOR.");
+  }
+
+  if (!["ACTIVO", "INACTIVO", "BLOQUEADO"].includes(status)) {
+    redirectWithError("El estado debe ser ACTIVO, INACTIVO o BLOQUEADO.");
+  }
+
+  const role = roleValue as "ADMIN" | "AHORRADOR";
+  const { error } = await (supabase as any).rpc("update_internal_user_profile", {
+    p_profile_id: profileId,
+    p_full_name: fullName,
+    p_phone: phone,
+    p_document_id: documentId,
+    p_role: role,
+    p_status: status
+  });
+
+  if (error) {
+    console.error("[admin-usuarios] update_internal_user_profile", error);
+    redirectWithError(error.message || "No fue posible editar el usuario.");
+  }
+
+  ADMIN_REVALIDATION_PATHS.forEach((path) => revalidatePath(path));
+  redirectWithSuccess("user_updated", profileId);
+}
+
+export async function enableSavingsAccountAction(formData: FormData) {
+  const supabase = createClientServer();
+  await requireActiveAdminProfileWithSession(supabase, "habilitar cuentas de ahorro");
+
+  const profileId = textValue(formData, "profile_id");
+  const accountNumber = nullableTextValue(formData, "account_number");
+  const initialBalance = parseAmount(formData.get("initial_balance"));
+
+  if (!profileId) {
+    redirectWithError("Selecciona un usuario valido.");
+  }
+
+  if (initialBalance === null || initialBalance < 0) {
+    redirectWithError("El saldo inicial debe ser cero o mayor.");
+  }
+
+  const { error } = await (supabase as any).rpc("enable_savings_account", {
+    p_profile_id: profileId,
+    p_account_number: accountNumber,
+    p_initial_balance: initialBalance
+  });
+
+  if (error) {
+    console.error("[admin-usuarios] enable_savings_account", error);
+    redirectWithError(error.message || "No fue posible habilitar la cuenta de ahorro.");
+  }
+
+  ADMIN_REVALIDATION_PATHS.forEach((path) => revalidatePath(path));
+  redirectWithSuccess("savings_enabled", profileId);
 }
 
 export async function activateUserAccessAction(formData: FormData) {

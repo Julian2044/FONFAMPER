@@ -31,6 +31,22 @@ function resolveFlashMessage(searchParams?: AdminUsersPageProps["searchParams"])
     };
   }
 
+  if (searchParams?.success === "user_updated") {
+    return {
+      tone: "success" as const,
+      message: "Usuario actualizado correctamente.",
+      temporaryPassword: null
+    };
+  }
+
+  if (searchParams?.success === "savings_enabled") {
+    return {
+      tone: "success" as const,
+      message: "Cuenta de ahorro habilitada correctamente.",
+      temporaryPassword: null
+    };
+  }
+
   if (searchParams?.error) {
     return {
       tone: "error" as const,

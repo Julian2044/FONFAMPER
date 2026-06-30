@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { ArrowLeft, Ban, FileText, MoreHorizontal, Pencil, PlusCircle, Search, X } from "lucide-react";
-import { activateUserAccessAction } from "@/app/admin/usuarios/actions";
+import { ArrowLeft, FileText, Landmark, MoreHorizontal, Pencil, PlusCircle, Save, Search, X } from "lucide-react";
+import { activateUserAccessAction, enableSavingsAccountAction, updateInternalUserAction } from "@/app/admin/usuarios/actions";
 import { AdminCreateSaverForm } from "@/components/admin/AdminCreateSaverForm";
 import { AvatarPlaceholder } from "@/components/ui/AvatarPlaceholder";
 import { Badge } from "@/components/ui/Badge";
@@ -48,6 +48,34 @@ function accessLabel(user: AdminUserData) {
   return user.authUserId ? "Acceso activo" : "Acceso pendiente";
 }
 
+function statusTone(status: string) {
+  const normalizedStatus = status.toUpperCase();
+
+  if (normalizedStatus === "ACTIVO") {
+    return "green" as const;
+  }
+
+  if (normalizedStatus === "BLOQUEADO") {
+    return "red" as const;
+  }
+
+  return "gray" as const;
+}
+
+function cleanMoneyInput(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+function formatMoneyInput(value: string) {
+  const cleaned = cleanMoneyInput(value);
+
+  if (!cleaned) {
+    return "";
+  }
+
+  return `$ ${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 }).format(Number(cleaned))}`;
+}
+
 function ActivateAccessButton() {
   const { pending } = useFormStatus();
 
@@ -59,10 +87,35 @@ function ActivateAccessButton() {
   );
 }
 
+function UpdateUserButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" className="w-full" disabled={pending}>
+      <Save className="h-4 w-4" />
+      {pending ? "Guardando..." : "Guardar cambios"}
+    </Button>
+  );
+}
+
+function EnableSavingsButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" className="w-full" disabled={pending}>
+      <Landmark className="h-4 w-4" />
+      {pending ? "Habilitando..." : "Habilitar cuenta"}
+    </Button>
+  );
+}
+
 export function AdminUsersClient({ users }: AdminUsersClientProps) {
   const [selectedUserName, setSelectedUserName] = useState(users.find((user) => user.esAhorrador)?.fullName ?? users[0]?.fullName ?? "");
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [createPanelOpen, setCreatePanelOpen] = useState(false);
+  const [editPanelOpen, setEditPanelOpen] = useState(false);
+  const [savingsPanelOpen, setSavingsPanelOpen] = useState(false);
+  const [initialBalance, setInitialBalance] = useState("");
 
   const selectedUser = useMemo(
     () => users.find((user) => user.fullName === selectedUserName) ?? users[0] ?? null,
@@ -135,6 +188,8 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
                     onClick={() => {
                       setSelectedUserName(user.fullName);
                       setMobileDetailOpen(true);
+                      setEditPanelOpen(false);
+                      setSavingsPanelOpen(false);
                     }}
                     className={cn(
                       "grid w-full grid-cols-1 items-center gap-3 px-4 py-4 text-left transition sm:grid-cols-[minmax(0,1fr)_140px] sm:gap-0",
@@ -204,6 +259,7 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
                     <span className={cn("h-2.5 w-2.5 rounded-full", selectedUser.authUserId ? "bg-[#004aad]" : "bg-amber-500")} />
                     {accessLabel(selectedUser)}
                   </span>
+                  <Badge tone={statusTone(selectedUser.status)}>{selectedUser.status}</Badge>
                 </div>
               </div>
             </div>
@@ -267,23 +323,137 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
               <FileText className="h-4 w-4" />
               Generar estado de cuenta
             </Link>
-            <Button variant="secondary" className="w-full">
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                setEditPanelOpen((current) => !current);
+                setSavingsPanelOpen(false);
+              }}
+            >
               <Pencil className="h-4 w-4" />
-              Editar usuario
+              {editPanelOpen ? "Cerrar edición" : "Editar usuario"}
             </Button>
-            {selectedUser.authUserId ? (
-              <Button variant="secondary" className="w-full">
-                <Ban className="h-4 w-4" />
-                Desactivar acceso
+            {!selectedUser.account ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={() => {
+                  setSavingsPanelOpen((current) => !current);
+                  setEditPanelOpen(false);
+                  setInitialBalance("");
+                }}
+              >
+                <Landmark className="h-4 w-4" />
+                {savingsPanelOpen ? "Cerrar cuenta" : "Habilitar cuenta de ahorro"}
               </Button>
-            ) : (
+            ) : null}
+            {!selectedUser.authUserId ? (
               <form action={activateUserAccessAction}>
                 <input type="hidden" name="profile_id" value={selectedUser.id} />
                 <ActivateAccessButton />
               </form>
-            )}
+            ) : null}
           </div>
-          <p className="mt-3 text-xs text-slate-400">Acción real pendiente de fase CRUD.</p>
+
+          {editPanelOpen ? (
+            <div key={`edit-${selectedUser.id}`} className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h4 className="text-lg font-extrabold text-slate-950">Editar usuario</h4>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">El correo se conserva sin cambios. Los saldos se modifican únicamente desde movimientos.</p>
+                </div>
+                <Button type="button" variant="ghost" className="w-full sm:w-auto" onClick={() => setEditPanelOpen(false)}>
+                  <X className="h-4 w-4" />
+                  Cerrar
+                </Button>
+              </div>
+              <form action={updateInternalUserAction} className="mt-5 grid gap-4 md:grid-cols-2">
+                <input type="hidden" name="profile_id" value={selectedUser.id} />
+                <label className="md:col-span-2">
+                  <span className="mb-2 block text-sm font-bold text-slate-700">Correo electrónico</span>
+                  <Input value={selectedUser.email} readOnly className="bg-slate-100 text-slate-500" />
+                </label>
+                <label className="md:col-span-2">
+                  <span className="mb-2 block text-sm font-bold text-slate-700">Nombre completo</span>
+                  <Input name="full_name" defaultValue={selectedUser.fullName} required />
+                </label>
+                <label>
+                  <span className="mb-2 block text-sm font-bold text-slate-700">Documento</span>
+                  <Input name="document_id" defaultValue={selectedUser.documentId ?? ""} />
+                </label>
+                <label>
+                  <span className="mb-2 block text-sm font-bold text-slate-700">Teléfono</span>
+                  <Input name="phone" defaultValue={selectedUser.phone ?? ""} />
+                </label>
+                <label>
+                  <span className="mb-2 block text-sm font-bold text-slate-700">Rol</span>
+                  <Select name="role" defaultValue={selectedUser.roleSistema}>
+                    <option value="ADMIN">ADMIN</option>
+                    <option value="AHORRADOR">AHORRADOR</option>
+                  </Select>
+                </label>
+                <label>
+                  <span className="mb-2 block text-sm font-bold text-slate-700">Estado</span>
+                  <Select name="status" defaultValue={selectedUser.status}>
+                    <option value="ACTIVO">ACTIVO</option>
+                    <option value="INACTIVO">INACTIVO</option>
+                    <option value="BLOQUEADO">BLOQUEADO</option>
+                  </Select>
+                </label>
+                <div className="grid gap-3 md:col-span-2 sm:grid-cols-2">
+                  <Button type="button" variant="secondary" className="w-full" onClick={() => setEditPanelOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <UpdateUserButton />
+                </div>
+              </form>
+            </div>
+          ) : null}
+
+          {savingsPanelOpen && !selectedUser.account ? (
+            <div key={`savings-${selectedUser.id}`} className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h4 className="text-lg font-extrabold text-slate-950">Habilitar cuenta de ahorro</h4>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">Crea la cuenta sin alterar usuarios, movimientos previos ni datos de acceso.</p>
+                </div>
+                <Button type="button" variant="ghost" className="w-full sm:w-auto" onClick={() => setSavingsPanelOpen(false)}>
+                  <X className="h-4 w-4" />
+                  Cerrar
+                </Button>
+              </div>
+              <form action={enableSavingsAccountAction} className="mt-5 grid gap-4 md:grid-cols-2">
+                <input type="hidden" name="profile_id" value={selectedUser.id} />
+                <label>
+                  <span className="mb-2 block text-sm font-bold text-slate-700">Número de cuenta opcional</span>
+                  <Input name="account_number" placeholder="FON-000001" />
+                </label>
+                <label>
+                  <span className="mb-2 block text-sm font-bold text-slate-700">Saldo inicial</span>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="$ 0"
+                    value={initialBalance}
+                    onChange={(event) => setInitialBalance(formatMoneyInput(event.target.value))}
+                  />
+                  <input type="hidden" name="initial_balance" value={cleanMoneyInput(initialBalance)} />
+                </label>
+                <div className="rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-slate-600 md:col-span-2">
+                  Si registras un saldo inicial mayor a cero, se creará automáticamente un movimiento de tipo Saldo inicial.
+                </div>
+                <div className="grid gap-3 md:col-span-2 sm:grid-cols-2">
+                  <Button type="button" variant="secondary" className="w-full" onClick={() => setSavingsPanelOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <EnableSavingsButton />
+                </div>
+              </form>
+            </div>
+          ) : null}
 
           <div className="mt-8">
             <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">

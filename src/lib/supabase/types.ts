@@ -71,9 +71,28 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      enable_savings_account: {
+        Args: {
+          p_account_number?: string | null;
+          p_initial_balance?: number | null;
+          p_profile_id: string;
+        };
+        Returns: Json;
+      };
       mark_password_changed: {
         Args: Record<string, never>;
         Returns: void;
+      };
+      update_internal_user_profile: {
+        Args: {
+          p_document_id: string | null;
+          p_full_name: string;
+          p_phone: string | null;
+          p_profile_id: string;
+          p_role: "ADMIN" | "AHORRADOR";
+          p_status: string;
+        };
+        Returns: Json;
       };
     };
     Enums: Record<string, never>;
