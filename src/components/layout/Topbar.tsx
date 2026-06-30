@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   ClipboardList,
   FileText,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -135,6 +136,7 @@ function getDropdownItems({
     return {
       primaryItems: [
         { label: "Panel administrativo", href: perfilHref, icon: LayoutDashboard },
+        { label: "Cambiar contraseña", href: "/cambiar-contrasena", icon: KeyRound },
         { label: "Auditoría", href: "/admin/auditoria", icon: ClipboardList },
         { label: "Configuración", href: "/admin/configuracion", icon: ShieldCheck }
       ] satisfies DropdownItem[],
@@ -145,6 +147,7 @@ function getDropdownItems({
   return {
     primaryItems: [
       { label: "Mi perfil", href: perfilHref, icon: User },
+      { label: "Cambiar contraseña", href: "/cambiar-contrasena", icon: KeyRound },
       { label: "Notificaciones", href: notificacionesHref, icon: Bell, badge: "2" }
     ] satisfies DropdownItem[],
     dangerItem: { label: "Cerrar sesión", href: cerrarSesionHref, icon: LogOut, danger: true, action: "logout" } satisfies DropdownItem

@@ -63,7 +63,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
               {flash.temporaryPassword ? (
                 <div className="mt-3 rounded-xl bg-white/70 p-3 text-sm ring-1 ring-emerald-200">
                   <p className="font-bold text-emerald-950">Contraseña temporal: {flash.temporaryPassword}</p>
-                  <p className="mt-1 text-emerald-800">Compártela con el usuario y pídele cambiarla después.</p>
+                  <p className="mt-1 text-emerald-800">Comparte esta contraseña temporal con el usuario. Debe cambiarla después de iniciar sesión.</p>
                 </div>
               ) : null}
             </div>
