@@ -55,6 +55,10 @@ export async function requireRole(role: ProfileRow["role"]) {
     redirect("/login?error=inactive");
   }
 
+  if (profile.must_change_password) {
+    redirect("/cambiar-contrasena");
+  }
+
   if (profile.role !== role) {
     redirect(getRoleHomePath(profile.role));
   }

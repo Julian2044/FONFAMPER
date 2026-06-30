@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
-import { CheckCircle2, KeyRound, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, KeyRound, Loader2, LogOut, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { createClientBrowser } from "@/lib/supabase/client";
 
 type ChangePasswordFormProps = {
   homeHref: string;
+  email: string;
+  mustChangePassword: boolean;
 };
 
 function resolvePasswordError(error: unknown) {
@@ -34,18 +37,52 @@ function resolvePasswordError(error: unknown) {
   return value.message ? String(value.message) : "No fue posible actualizar la contraseña.";
 }
 
-export function ChangePasswordForm({ homeHref }: ChangePasswordFormProps) {
+function resolveCurrentPasswordError(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return "No fue posible validar la contraseña actual.";
+  }
+
+  const value = error as { message?: unknown; name?: unknown; status?: unknown };
+  const raw = [value.message, value.name, value.status].filter(Boolean).join(" ").toLowerCase();
+
+  if (raw.includes("invalid login credentials") || raw.includes("invalid") || raw.includes("unauthorized")) {
+    return "La contraseña actual no es correcta.";
+  }
+
+  if (raw.includes("network") || raw.includes("fetch") || raw.includes("failed to fetch")) {
+    return "Error de conexión al validar la contraseña actual.";
+  }
+
+  return "No fue posible validar la contraseña actual.";
+}
+
+export function ChangePasswordForm({ homeHref, email, mustChangePassword }: ChangePasswordFormProps) {
+  const router = useRouter();
   const supabase = useMemo(() => createClientBrowser(), []);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+
+  async function handleLogout() {
+    setLogoutLoading(true);
+    await supabase.auth.signOut();
+    router.replace("/login");
+    router.refresh();
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
     setSuccess(false);
+
+    if (!mustChangePassword && !currentPassword) {
+      setErrorMessage("La contraseña actual es obligatoria.");
+      return;
+    }
 
     if (!newPassword.trim()) {
       setErrorMessage("La nueva contraseña es obligatoria.");
@@ -62,9 +99,26 @@ export function ChangePasswordForm({ homeHref }: ChangePasswordFormProps) {
       return;
     }
 
+    if (!mustChangePassword && currentPassword === newPassword) {
+      setErrorMessage("La nueva contraseña debe ser diferente a la contraseña actual.");
+      return;
+    }
+
     setLoading(true);
 
     try {
+      if (!mustChangePassword) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password: currentPassword
+        });
+
+        if (signInError) {
+          setErrorMessage(resolveCurrentPasswordError(signInError));
+          return;
+        }
+      }
+
       const { error } = await supabase.auth.updateUser({ password: newPassword });
 
       if (error) {
@@ -72,8 +126,23 @@ export function ChangePasswordForm({ homeHref }: ChangePasswordFormProps) {
         return;
       }
 
+      const { error: markChangedError } = await supabase.rpc("mark_password_changed");
+
+      if (markChangedError) {
+        setErrorMessage("La contraseña fue actualizada, pero no fue posible liberar el acceso. Intenta nuevamente.");
+        return;
+      }
+
+      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+
+      if (mustChangePassword) {
+        router.replace(homeHref);
+        router.refresh();
+        return;
+      }
+
       setSuccess(true);
     } catch {
       setErrorMessage("Error de conexión. Intenta nuevamente.");
@@ -90,7 +159,26 @@ export function ChangePasswordForm({ homeHref }: ChangePasswordFormProps) {
         </div>
         <div className="min-w-0">
           <h1 className="text-2xl font-extrabold leading-tight text-slate-950 sm:text-3xl">Cambiar contraseña</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Actualiza tu contraseña de acceso a FONFAMPER.</p>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            {mustChangePassword ? "Debes completar este paso antes de entrar al portal." : "Confirma tu contraseña actual para proteger tu cuenta."}
+          </p>
+        </div>
+      </div>
+
+      <div
+        className={
+          mustChangePassword
+            ? "mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900"
+            : "mt-6 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-900"
+        }
+      >
+        <div className="flex items-start gap-3">
+          {mustChangePassword ? <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" /> : <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />}
+          <p className="text-sm font-semibold">
+            {mustChangePassword
+              ? "Debes cambiar tu contraseña temporal para continuar."
+              : "Ingresa tu contraseña actual antes de definir una nueva."}
+          </p>
         </div>
       </div>
 
@@ -118,6 +206,19 @@ export function ChangePasswordForm({ homeHref }: ChangePasswordFormProps) {
       ) : null}
 
       <form className="mt-7 space-y-5" onSubmit={handleSubmit}>
+        {!mustChangePassword ? (
+          <label className="block">
+            <span className="mb-2 block text-sm font-bold text-slate-700">Contraseña actual</span>
+            <Input
+              autoComplete="current-password"
+              type="password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              required
+            />
+          </label>
+        ) : null}
+
         <label className="block">
           <span className="mb-2 block text-sm font-bold text-slate-700">Nueva contraseña</span>
           <Input
@@ -147,12 +248,19 @@ export function ChangePasswordForm({ homeHref }: ChangePasswordFormProps) {
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
             {loading ? "Actualizando..." : "Actualizar contraseña"}
           </Button>
-          <Link
-            href={homeHref}
-            className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-white px-4 text-sm font-semibold text-[#004aad] ring-1 ring-[#0057d9]/25 transition hover:bg-blue-50 sm:w-auto"
-          >
-            Volver
-          </Link>
+          {mustChangePassword ? (
+            <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => void handleLogout()} disabled={logoutLoading}>
+              {logoutLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+              Cerrar sesión
+            </Button>
+          ) : (
+            <Link
+              href={homeHref}
+              className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-white px-4 text-sm font-semibold text-[#004aad] ring-1 ring-[#0057d9]/25 transition hover:bg-blue-50 sm:w-auto"
+            >
+              Volver
+            </Link>
+          )}
         </div>
       </form>
     </div>

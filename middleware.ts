@@ -72,11 +72,17 @@ export async function middleware(request: NextRequest) {
       const { data: profile } = await supabase
         .schema("public")
         .from("profiles")
-        .select("role, status")
+        .select("role, status, must_change_password")
         .eq("auth_user_id", user.id)
         .maybeSingle();
 
       if (profile?.status?.toUpperCase() === "ACTIVO") {
+        if (profile.must_change_password) {
+          const response = NextResponse.redirect(new URL("/cambiar-contrasena", request.url));
+          applyCookies(response, cookiesToSet);
+          return response;
+        }
+
         const homePath = profile.role === "ADMIN" ? "/admin/dashboard" : "/ahorrador/inicio";
         const response = NextResponse.redirect(new URL(homePath, request.url));
         applyCookies(response, cookiesToSet);
@@ -107,7 +113,7 @@ export async function middleware(request: NextRequest) {
   const { data: profile } = await supabase
     .schema("public")
     .from("profiles")
-    .select("role, status")
+    .select("role, status, must_change_password")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
@@ -119,6 +125,12 @@ export async function middleware(request: NextRequest) {
 
   if (profile.status?.toUpperCase() !== "ACTIVO") {
     const response = NextResponse.redirect(new URL("/login?error=inactive", request.url));
+    applyCookies(response, cookiesToSet);
+    return response;
+  }
+
+  if (profile.must_change_password && (isAdminPath || isSaverPath)) {
+    const response = NextResponse.redirect(new URL("/cambiar-contrasena", request.url));
     applyCookies(response, cookiesToSet);
     return response;
   }

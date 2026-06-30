@@ -18,6 +18,8 @@ export type Database = {
         status: string;
         phone: string | null;
         document_id: string | null;
+        must_change_password: boolean;
+        password_changed_at: string | null;
         created_at: string;
         updated_at: string;
       }>;
@@ -68,7 +70,12 @@ export type Database = {
       }>;
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      mark_password_changed: {
+        Args: Record<string, never>;
+        Returns: void;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

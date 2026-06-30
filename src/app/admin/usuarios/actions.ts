@@ -331,7 +331,12 @@ export async function activateUserAccessAction(formData: FormData) {
   const { error: updateProfileError } = await adminSupabase
     .schema("public")
     .from("profiles")
-    .update({ auth_user_id: authUserId, updated_at: new Date().toISOString() })
+    .update({
+      auth_user_id: authUserId,
+      must_change_password: true,
+      password_changed_at: null,
+      updated_at: new Date().toISOString()
+    })
     .eq("id", targetProfile.id)
     .is("auth_user_id", null);
 
