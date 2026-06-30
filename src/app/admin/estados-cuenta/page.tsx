@@ -1,4 +1,5 @@
-import { FileText, Search } from "lucide-react";
+import Link from "next/link";
+import { FileText, Printer, Search } from "lucide-react";
 import { StatementMovementList } from "@/components/finance/StatementMovementList";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -39,6 +40,9 @@ export default async function AdminStatementsPage({ searchParams }: AdminStateme
     hasFilters ? getAdminStatementForProfile(profileId || undefined, { startDate, endDate }) : Promise.resolve(emptyStatementResult())
   ]);
   const statement = statementResult.statement;
+  const pdfHref = statement
+    ? `/api/admin/estados-cuenta/pdf?profileId=${encodeURIComponent(profileId)}&from=${encodeURIComponent(statement.period.startDate)}&to=${encodeURIComponent(statement.period.endDate)}`
+    : null;
 
   const summaryItems = statement
     ? [
@@ -93,6 +97,23 @@ export default async function AdminStatementsPage({ searchParams }: AdminStateme
             Consultar
           </Button>
         </form>
+        <div className="mt-4 flex justify-end">
+          {pdfHref ? (
+            <Link
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#004aad] ring-1 ring-[#0057d9]/25 transition hover:bg-blue-50 sm:w-auto"
+              download
+              href={pdfHref}
+            >
+              <Printer className="h-4 w-4" />
+              Generar PDF
+            </Link>
+          ) : (
+            <Button className="w-full sm:w-auto" disabled type="button" variant="secondary">
+              <Printer className="h-4 w-4" />
+              Generar PDF
+            </Button>
+          )}
+        </div>
       </Card>
 
       {profilesResult.profiles.length === 0 ? (
