@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { ArrowLeft, Ban, FileText, MoreHorizontal, Pencil, PlusCircle, Search, X } from "lucide-react";
+import { activateUserAccessAction } from "@/app/admin/usuarios/actions";
 import { AdminCreateSaverForm } from "@/components/admin/AdminCreateSaverForm";
 import { AvatarPlaceholder } from "@/components/ui/AvatarPlaceholder";
 import { Badge } from "@/components/ui/Badge";
@@ -44,6 +46,17 @@ function movementLabel(type: AdminUserData["recentMovements"][number]["movementT
 
 function accessLabel(user: AdminUserData) {
   return user.authUserId ? "Acceso activo" : "Acceso pendiente";
+}
+
+function ActivateAccessButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" className="w-full" disabled={pending}>
+      <PlusCircle className="h-4 w-4" />
+      {pending ? "Activando..." : "Activar acceso"}
+    </Button>
+  );
 }
 
 export function AdminUsersClient({ users }: AdminUsersClientProps) {
@@ -258,10 +271,17 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
               <Pencil className="h-4 w-4" />
               Editar usuario
             </Button>
-            <Button variant="secondary" className="w-full">
-              <Ban className="h-4 w-4" />
-              Desactivar acceso
-            </Button>
+            {selectedUser.authUserId ? (
+              <Button variant="secondary" className="w-full">
+                <Ban className="h-4 w-4" />
+                Desactivar acceso
+              </Button>
+            ) : (
+              <form action={activateUserAccessAction}>
+                <input type="hidden" name="profile_id" value={selectedUser.id} />
+                <ActivateAccessButton />
+              </form>
+            )}
           </div>
           <p className="mt-3 text-xs text-slate-400">Acción real pendiente de fase CRUD.</p>
 

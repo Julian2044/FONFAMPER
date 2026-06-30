@@ -29,6 +29,16 @@ npm run dev
 
 Luego abre `http://localhost:3000`.
 
+## Variables de entorno
+
+Para activar acceso de usuarios internos desde administracion se requiere una llave server-only en `.env.local` y en Vercel:
+
+```bash
+SUPABASE_SERVICE_ROLE_KEY=...
+```
+
+Esta variable no debe usar prefijo `NEXT_PUBLIC_`.
+
 ## Rutas principales
 
 - `/login`
