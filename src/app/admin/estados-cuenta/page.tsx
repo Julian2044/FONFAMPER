@@ -1,209 +1,161 @@
-import { Download, Eye, FileText, Mail } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
+import { FileText, Search } from "lucide-react";
+import { StatementMovementList } from "@/components/finance/StatementMovementList";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { getDemoAdminData } from "@/lib/fonfamper/admin-data";
-import { formatCurrencyCOP, formatDate, formatDateTime, formatDocumentId } from "@/lib/fonfamper/format";
+import { formatCurrencyCOP } from "@/lib/fonfamper/format";
+import { getAdminStatementForProfile, getAdminStatementProfiles, type StatementResult } from "@/lib/fonfamper/statement-data";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminStatementsPage() {
-  const adminData = await getDemoAdminData();
-  const saverUsers = adminData.users.filter((user) => user.esAhorrador);
-  const selectedUser = saverUsers[0] ?? adminData.users.find((user) => user.account) ?? null;
+type AdminStatementsPageProps = {
+  searchParams?: {
+    profileId?: string | string[];
+    startDate?: string | string[];
+    endDate?: string | string[];
+  };
+};
 
-  const statementItems = saverUsers.map((user) => {
-    const userMovements = adminData.movements
-      .filter((movement) => movement.profileId === user.id)
-      .sort((left, right) => new Date(left.movementDate).getTime() - new Date(right.movementDate).getTime());
-    const period =
-      userMovements.length > 0
-        ? `${formatDate(userMovements[0].movementDate)} - ${formatDate(userMovements[userMovements.length - 1].movementDate)}`
-        : adminData.timeline.statementPeriodLabel;
+function getSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+}
 
-    return {
-      id: user.id,
-      user: user.fullName,
-      period,
-      initialBalance: formatCurrencyCOP(user.summary.initialBalance),
-      contributions: formatCurrencyCOP(user.summary.totalContributions),
-      utilities: formatCurrencyCOP(user.summary.totalUtilities),
-      withdrawals: formatCurrencyCOP(user.summary.totalWithdrawals),
-      finalBalance: formatCurrencyCOP(user.summary.currentBalance)
-    };
-  });
+function emptyStatementResult(): StatementResult {
+  return {
+    statement: null,
+    errors: []
+  };
+}
 
-  const topMetrics = [
-    ["Estados generados", saverUsers.length ? "1" : "0"],
-    ["Pendientes", "0"],
-    ["Último periodo", adminData.timeline.latestMovementMonthLabel],
-    ["Descargas", "0"]
-  ] as const;
+export default async function AdminStatementsPage({ searchParams }: AdminStatementsPageProps) {
+  const profileId = getSearchValue(searchParams?.profileId);
+  const startDate = getSearchValue(searchParams?.startDate);
+  const endDate = getSearchValue(searchParams?.endDate);
+  const hasFilters = Boolean(profileId || startDate || endDate);
+
+  const [profilesResult, statementResult] = await Promise.all([
+    getAdminStatementProfiles(),
+    hasFilters ? getAdminStatementForProfile(profileId || undefined, { startDate, endDate }) : Promise.resolve(emptyStatementResult())
+  ]);
+  const statement = statementResult.statement;
+
+  const summaryItems = statement
+    ? [
+        ["Nombre del usuario", statement.profile.full_name],
+        ["Número de cuenta", statement.account.account_number ?? "No registrado"],
+        ["Periodo", statement.period.label],
+        ["Saldo anterior", formatCurrencyCOP(statement.previousBalance)],
+        ["Total aportes", formatCurrencyCOP(statement.totalContributions)],
+        ["Total retiros", formatCurrencyCOP(statement.totalWithdrawals)],
+        ["Total ajustes", formatCurrencyCOP(statement.totalAdjustments)],
+        ["Saldo final", formatCurrencyCOP(statement.finalBalance)],
+        ["Movimientos", String(statement.movementCount)]
+      ]
+    : [];
 
   return (
-    <div className="space-y-8 min-w-0">
+    <div className="min-w-0 space-y-8">
       <div>
         <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl">Estados de cuenta</h2>
-        <p className="mt-2 text-base text-slate-500">Genera, consulta y descarga estados de cuenta de los ahorradores.</p>
+        <p className="mt-2 text-base text-slate-500">Consulta estados de cuenta generados desde cuentas y movimientos reales.</p>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {topMetrics.map(([label, value]) => (
-          <Card key={label} className="min-h-[132px]">
-            <p className="break-words text-sm font-semibold text-slate-500">{label}</p>
-            <p className="mt-3 whitespace-nowrap text-[22px] font-extrabold leading-none tracking-tight text-slate-950 sm:text-[30px]">{value}</p>
-          </Card>
-        ))}
-      </div>
+      {profilesResult.error ? (
+        <Card className="border-amber-200 bg-amber-50 text-amber-900">
+          <p className="text-sm font-semibold">{profilesResult.error}</p>
+        </Card>
+      ) : null}
 
-      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="space-y-6 min-w-0">
-          <Card className="min-w-0">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto]">
-              <label>
-                <span className="mb-2 block text-sm font-bold text-slate-700">Usuario</span>
-                <Select defaultValue={selectedUser?.id ?? "todos"}>
-                  <option value="todos">Todos los usuarios</option>
-                  {saverUsers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.fullName}
-                    </option>
-                  ))}
-                </Select>
-              </label>
-              <label>
-                <span className="mb-2 block text-sm font-bold text-slate-700">Periodo</span>
-                <Select defaultValue="periodo-real">
-                  <option value="periodo-real">{adminData.timeline.statementPeriodLabel}</option>
-                </Select>
-              </label>
-              <label>
-                <span className="mb-2 block text-sm font-bold text-slate-700">Estado</span>
-                <Select defaultValue="todos">
-                  <option value="todos">Todos</option>
-                </Select>
-              </label>
-              <div className="flex items-end">
-                <Button className="w-full">
-                  <FileText className="h-4 w-4" />
-                  Generar estados
-                </Button>
-              </div>
+      <Card className="min-w-0">
+        <form className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end" method="GET">
+          <label className="min-w-0">
+            <span className="mb-2 block text-sm font-bold text-slate-700">Usuario</span>
+            <Select name="profileId" defaultValue={profileId} required>
+              <option value="">Selecciona un usuario con cuenta</option>
+              {profilesResult.profiles.map((profile) => (
+                <option key={profile.id} value={profile.id}>
+                  {profile.fullName} - {profile.accountNumber ?? "Sin número"}
+                </option>
+              ))}
+            </Select>
+          </label>
+          <label className="min-w-0">
+            <span className="mb-2 block text-sm font-bold text-slate-700">Fecha inicial</span>
+            <Input name="startDate" type="date" defaultValue={startDate} required />
+          </label>
+          <label className="min-w-0">
+            <span className="mb-2 block text-sm font-bold text-slate-700">Fecha final</span>
+            <Input name="endDate" type="date" defaultValue={endDate} required />
+          </label>
+          <Button className="w-full lg:w-auto" type="submit">
+            <Search className="h-4 w-4" />
+            Consultar
+          </Button>
+        </form>
+      </Card>
+
+      {profilesResult.profiles.length === 0 ? (
+        <Card className="border-slate-200 bg-slate-50 text-slate-600">
+          <p className="text-sm font-semibold">No hay perfiles con cuenta de ahorro disponibles.</p>
+        </Card>
+      ) : null}
+
+      {hasFilters && statementResult.errors.length > 0 ? (
+        <Card className="border-red-200 bg-red-50 text-red-800">
+          <div className="flex items-start gap-3">
+            <FileText className="mt-0.5 h-5 w-5 shrink-0" />
+            <div className="space-y-1 text-sm font-semibold">
+              {statementResult.errors.map((error) => (
+                <p key={error}>{error}</p>
+              ))}
             </div>
-          </Card>
-
-          <div className="space-y-4">
-            {statementItems.map((item) => (
-              <Card key={item.id} className="min-w-0">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="break-words text-lg font-extrabold text-slate-950">{item.user}</p>
-                    <p className="mt-1 break-words text-sm text-slate-500">Periodo: {item.period}</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Badge tone="green">Generado</Badge>
-                    <button type="button" className="inline-flex whitespace-nowrap text-sm font-extrabold text-[#0057d7]">
-                      Ver
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                  <div className="rounded-2xl bg-slate-50 p-4">
-                    <p className="text-xs font-bold uppercase text-slate-400">Saldo inicial</p>
-                    <p className="mt-2 whitespace-nowrap font-bold text-slate-950">{item.initialBalance}</p>
-                  </div>
-                  <div className="rounded-2xl bg-slate-50 p-4">
-                    <p className="text-xs font-bold uppercase text-slate-400">Aportes</p>
-                    <p className="mt-2 whitespace-nowrap font-bold text-slate-950">{item.contributions}</p>
-                  </div>
-                  <div className="rounded-2xl bg-slate-50 p-4">
-                    <p className="text-xs font-bold uppercase text-slate-400">Utilidades</p>
-                    <p className="mt-2 whitespace-nowrap font-bold text-slate-950">{item.utilities}</p>
-                  </div>
-                  <div className="rounded-2xl bg-slate-50 p-4">
-                    <p className="text-xs font-bold uppercase text-slate-400">Retiros</p>
-                    <p className="mt-2 whitespace-nowrap font-bold text-slate-950">{item.withdrawals}</p>
-                  </div>
-                  <div className="rounded-2xl bg-blue-50 p-4">
-                    <p className="text-xs font-bold uppercase text-[#062B5F]">Saldo final</p>
-                    <p className="mt-2 whitespace-nowrap text-lg font-extrabold text-[#062B5F]">{item.finalBalance}</p>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        <Card className="min-w-0">
-          <h3 className="text-lg font-extrabold text-slate-950">Vista previa</h3>
-          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-            <div className="min-h-[420px] rounded-xl bg-white p-5 shadow-sm sm:p-6">
-              <div className="border-b border-slate-200 pb-4">
-                <p className="text-xl font-extrabold text-[#062B5F]">FONFAMPER</p>
-                <p className="mt-1 text-xs font-semibold text-slate-500">Estado de cuenta - {adminData.timeline.latestMovementMonthLabel}</p>
-              </div>
-              {selectedUser ? (
-                <div className="mt-6 space-y-4 text-sm">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="text-slate-500">Titular</span>
-                    <span className="break-words font-bold text-slate-950">{selectedUser.fullName}</span>
-                  </div>
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="text-slate-500">Documento</span>
-                    <span className="break-words font-bold text-slate-950">{formatDocumentId(selectedUser.documentId)}</span>
-                  </div>
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="text-slate-500">Periodo</span>
-                    <span className="break-words font-bold text-slate-950">{adminData.timeline.statementPeriodLabel}</span>
-                  </div>
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="text-slate-500">Fecha de emisión</span>
-                    <span className="break-words font-bold text-slate-950">{formatDateTime(adminData.timeline.reportIssuedAt)}</span>
-                  </div>
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="text-slate-500">Saldo inicial</span>
-                    <span className="whitespace-nowrap font-bold">{formatCurrencyCOP(selectedUser.summary.initialBalance)}</span>
-                  </div>
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="text-slate-500">Aportes</span>
-                    <span className="whitespace-nowrap font-bold">{formatCurrencyCOP(selectedUser.summary.totalContributions)}</span>
-                  </div>
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="text-slate-500">Utilidades</span>
-                    <span className="whitespace-nowrap font-bold">{formatCurrencyCOP(selectedUser.summary.totalUtilities)}</span>
-                  </div>
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="text-slate-500">Retiros</span>
-                    <span className="whitespace-nowrap font-bold">{formatCurrencyCOP(selectedUser.summary.totalWithdrawals)}</span>
-                  </div>
-                  <div className="flex flex-col gap-1 rounded-xl bg-blue-50 p-3 text-[#062B5F] sm:flex-row sm:items-center sm:justify-between">
-                    <span className="font-bold">Saldo final</span>
-                    <span className="whitespace-nowrap font-extrabold">{formatCurrencyCOP(selectedUser.summary.currentBalance)}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-6 text-sm text-slate-500">No se encontró un ahorrador para mostrar la vista previa.</div>
-              )}
-            </div>
-          </div>
-          <div className="mt-5 grid gap-3">
-            <Button variant="secondary" className="w-full">
-              <Download className="h-4 w-4" />
-              Descargar PDF
-            </Button>
-            <Button variant="secondary" className="w-full">
-              <Mail className="h-4 w-4" />
-              Enviar por correo
-            </Button>
-            <Button className="w-full">
-              <Eye className="h-4 w-4" />
-              Ver detalle
-            </Button>
           </div>
         </Card>
-      </div>
+      ) : null}
+
+      {!hasFilters ? (
+        <Card className="border-blue-100 bg-blue-50 text-[#062B5F]">
+          <p className="text-sm font-semibold">Selecciona un usuario con cuenta y un rango de fechas para consultar el estado de cuenta.</p>
+        </Card>
+      ) : null}
+
+      {statement ? (
+        <>
+          <Card className="min-w-0">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <h3 className="text-xl font-extrabold text-slate-950">Resumen del estado de cuenta</h3>
+                <p className="mt-1 break-words text-sm font-semibold text-slate-500">{statement.profile.full_name}</p>
+              </div>
+              <div className="min-w-0 rounded-xl bg-blue-50 px-4 py-3 text-[#062B5F]">
+                <p className="text-xs font-bold uppercase">Saldo final</p>
+                <p className="mt-1 break-words text-xl font-extrabold">{formatCurrencyCOP(statement.finalBalance)}</p>
+              </div>
+            </div>
+
+            <dl className="mt-6 grid min-w-0 gap-x-6 gap-y-5 sm:grid-cols-2 xl:grid-cols-3">
+              {summaryItems.map(([label, value]) => (
+                <div key={label} className="min-w-0 border-t border-slate-100 pt-4">
+                  <dt className="text-xs font-bold uppercase text-slate-400">{label}</dt>
+                  <dd className="mt-2 break-words text-base font-extrabold text-slate-950">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </Card>
+
+          <Card className="min-w-0">
+            <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h3 className="text-xl font-extrabold text-slate-950">Movimientos del periodo</h3>
+                <p className="mt-1 text-sm text-slate-500">{statement.period.label}</p>
+              </div>
+              <p className="text-sm font-bold text-slate-500">{statement.movementCount} movimientos</p>
+            </div>
+            <StatementMovementList movements={statement.movements} />
+          </Card>
+        </>
+      ) : null}
     </div>
   );
 }

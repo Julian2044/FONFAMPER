@@ -23,11 +23,11 @@ export function formatCurrencyCOP(value: number | null | undefined, fallback = D
     return fallback;
   }
 
-  return new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
+  const formatted = new Intl.NumberFormat("es-CO", {
     maximumFractionDigits: 0
   }).format(Number(value));
+
+  return `$ ${formatted}`;
 }
 
 export function formatDate(value: string | null | undefined, fallback = DEFAULT_FALLBACK) {
@@ -38,9 +38,9 @@ export function formatDate(value: string | null | undefined, fallback = DEFAULT_
   }
 
   return new Intl.DateTimeFormat("es-CO", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit"
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
   }).format(date);
 }
 
@@ -52,9 +52,9 @@ export function formatDateTime(value: string | null | undefined, fallback = DEFA
   }
 
   return new Intl.DateTimeFormat("es-CO", {
-    year: "numeric",
-    month: "short",
     day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit"
   }).format(date);
