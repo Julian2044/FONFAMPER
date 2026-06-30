@@ -94,7 +94,7 @@ function isAdminActive(profile: ProfileRow | null): profile is ProfileRow {
   return profile?.role === "ADMIN" && String(profile.status ?? "").toUpperCase() === "ACTIVO";
 }
 
-async function requireActiveAdminProfile(adminSupabase: AdminSupabaseClient, actionLabel: string) {
+async function getAuthenticatedUserForAction(actionLabel: string) {
   const supabase = createClientServer();
   const {
     data: { user },
@@ -109,11 +109,15 @@ async function requireActiveAdminProfile(adminSupabase: AdminSupabaseClient, act
     redirectWithError(`Debes iniciar sesion para ${actionLabel}.`);
   }
 
+  return user;
+}
+
+async function requireActiveAdminProfile(adminSupabase: AdminSupabaseClient, authUserId: string, actionLabel: string) {
   const { data: adminProfile, error: adminProfileError } = await adminSupabase
     .schema("public")
     .from("profiles")
     .select("*")
-    .eq("auth_user_id", user.id)
+    .eq("auth_user_id", authUserId)
     .maybeSingle<ProfileRow>();
 
   if (adminProfileError) {
@@ -155,7 +159,8 @@ async function findAuthUserByEmail(adminSupabase: AdminSupabaseClient, email: st
 
 export async function createInternalUserProfileAction(formData: FormData) {
   const adminSupabase = createAdminClientForAction();
-  await requireActiveAdminProfile(adminSupabase, "crear usuarios");
+  const currentUser = await getAuthenticatedUserForAction("crear usuarios");
+  await requireActiveAdminProfile(adminSupabase, currentUser.id, "crear usuarios");
 
   const fullName = textValue(formData, "full_name");
   const email = textValue(formData, "email").toLowerCase();
@@ -208,7 +213,8 @@ export async function createInternalUserProfileAction(formData: FormData) {
 
 export async function activateUserAccessAction(formData: FormData) {
   const adminSupabase = createAdminClientForAction();
-  const adminProfile = await requireActiveAdminProfile(adminSupabase, "activar accesos");
+  const currentUser = await getAuthenticatedUserForAction("activar accesos");
+  const adminProfile = await requireActiveAdminProfile(adminSupabase, currentUser.id, "activar accesos");
 
   const profileId = textValue(formData, "profile_id");
 
