@@ -23,6 +23,18 @@ function formatMoneyInput(value: string) {
   return `$ ${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 }).format(Number(cleaned))}`;
 }
 
+function getTodayInputDate() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/Bogota",
+    year: "numeric"
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 function SubmitButton() {
   const { pending } = useFormStatus();
 
@@ -37,6 +49,7 @@ function SubmitButton() {
 export function AdminCreateSaverForm() {
   const [savingsEnabled, setSavingsEnabled] = useState(false);
   const [initialBalance, setInitialBalance] = useState("");
+  const [initialBalanceDate, setInitialBalanceDate] = useState(getTodayInputDate);
   const cleanInitialBalance = cleanMoneyInput(initialBalance);
 
   return (
@@ -105,6 +118,19 @@ export function AdminCreateSaverForm() {
               placeholder="$ 0"
               value={initialBalance}
               onChange={(event) => setInitialBalance(formatMoneyInput(event.target.value))}
+            />
+          </label>
+        ) : null}
+
+        {savingsEnabled ? (
+          <label className="min-w-0">
+            <span className="mb-2 block text-xs font-bold uppercase text-slate-400">Fecha saldo inicial</span>
+            <Input
+              name="initial_balance_date"
+              type="date"
+              value={initialBalanceDate}
+              onChange={(event) => setInitialBalanceDate(event.target.value)}
+              required
             />
           </label>
         ) : null}

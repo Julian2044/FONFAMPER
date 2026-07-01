@@ -71,10 +71,25 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      create_internal_user_profile: {
+        Args: {
+          p_account_number?: string | null;
+          p_create_account?: boolean | null;
+          p_document_id?: string | null;
+          p_email: string;
+          p_full_name: string;
+          p_initial_balance?: number | null;
+          p_initial_balance_date?: string | null;
+          p_phone?: string | null;
+          p_role: string;
+        };
+        Returns: Json;
+      };
       enable_savings_account: {
         Args: {
           p_account_number?: string | null;
           p_initial_balance?: number | null;
+          p_initial_balance_date?: string | null;
           p_profile_id: string;
         };
         Returns: Json;

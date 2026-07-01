@@ -1,10 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { ArrowLeft, FileText, Landmark, MoreHorizontal, Pencil, PlusCircle, Save, Search, X } from "lucide-react";
-import { activateUserAccessAction, enableSavingsAccountAction, updateInternalUserAction } from "@/app/admin/usuarios/actions";
+import { AlertTriangle, ArrowLeft, FileText, Landmark, MoreHorizontal, Pencil, PlusCircle, Save, Search, ShieldOff, Trash2, X } from "lucide-react";
+import {
+  activateUserAccessAction,
+  deleteTestUserAction,
+  enableSavingsAccountAction,
+  revokeUserAccessAction,
+  updateInternalUserAction
+} from "@/app/admin/usuarios/actions";
 import { AdminCreateSaverForm } from "@/components/admin/AdminCreateSaverForm";
 import { AvatarPlaceholder } from "@/components/ui/AvatarPlaceholder";
 import { Badge } from "@/components/ui/Badge";
@@ -20,6 +26,33 @@ import { cn } from "@/lib/utils";
 type AdminUsersClientProps = {
   users: AdminUserData[];
 };
+
+type UserFilter =
+  | "todos"
+  | "activos"
+  | "inactivos"
+  | "bloqueados"
+  | "administradores"
+  | "ahorradores"
+  | "acceso-pendiente"
+  | "acceso-activo"
+  | "ahorro-habilitado"
+  | "sin-cuenta";
+
+const userFilterOptions: Array<{ label: string; value: UserFilter }> = [
+  { label: "Todos", value: "todos" },
+  { label: "Activos", value: "activos" },
+  { label: "Inactivos", value: "inactivos" },
+  { label: "Bloqueados", value: "bloqueados" },
+  { label: "Administradores", value: "administradores" },
+  { label: "Ahorradores", value: "ahorradores" },
+  { label: "Acceso pendiente", value: "acceso-pendiente" },
+  { label: "Acceso activo", value: "acceso-activo" },
+  { label: "Ahorro habilitado", value: "ahorro-habilitado" },
+  { label: "Sin cuenta de ahorro", value: "sin-cuenta" }
+];
+
+const protectedBaseUserEmails = new Set(["camilo.perez@email.com", "sonia.perez@email.com"]);
 
 function roleLabel(role: AdminUserData["role"]) {
   return role === "ADMIN" ? "Administrador" : "Ahorrador";
@@ -48,6 +81,50 @@ function accessLabel(user: AdminUserData) {
   return user.authUserId ? "Acceso activo" : "Acceso pendiente";
 }
 
+function isProtectedBaseUser(user: AdminUserData) {
+  return protectedBaseUserEmails.has(user.email.trim().toLowerCase());
+}
+
+function hasOnlyAllowedTestMovements(user: AdminUserData) {
+  if (user.movementCount === 0) {
+    return true;
+  }
+
+  if (user.movementCount !== 1) {
+    return false;
+  }
+
+  const movement = user.recentMovements[0];
+
+  return Boolean(
+    movement &&
+      movement.movementType === "SALDO_INICIAL" &&
+      movement.amount === 0 &&
+      movement.balanceAfter === 0
+  );
+}
+
+function canShowDeleteTestUser(user: AdminUserData) {
+  if (isProtectedBaseUser(user)) {
+    return false;
+  }
+
+  if (user.summary.currentBalance > 0) {
+    return false;
+  }
+
+  if (
+    user.summary.initialBalance > 0 ||
+    user.summary.totalContributions > 0 ||
+    user.summary.totalWithdrawals > 0 ||
+    user.summary.totalUtilities > 0
+  ) {
+    return false;
+  }
+
+  return hasOnlyAllowedTestMovements(user);
+}
+
 function statusTone(status: string) {
   const normalizedStatus = status.toUpperCase();
 
@@ -74,6 +151,84 @@ function formatMoneyInput(value: string) {
   }
 
   return `$ ${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 }).format(Number(cleaned))}`;
+}
+
+function getTodayInputDate() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/Bogota",
+    year: "numeric"
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function normalizeSearchValue(value: string | null | undefined) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function userSearchText(user: AdminUserData) {
+  return normalizeSearchValue(
+    [
+      user.fullName,
+      user.email,
+      user.documentId,
+      user.phone,
+      user.role,
+      user.roleSistema,
+      roleLabel(user.role),
+      roleLabel(user.roleSistema),
+      user.status,
+      accessLabel(user),
+      user.esAhorrador ? "Ahorro habilitado cuenta ahorro habilitada con cuenta" : "Sin cuenta de ahorro",
+      user.account?.account_number
+    ].join(" ")
+  );
+}
+
+function matchesSearch(user: AdminUserData, normalizedSearch: string) {
+  if (!normalizedSearch) {
+    return true;
+  }
+
+  const searchTokens = normalizedSearch.split(" ").filter(Boolean);
+  const haystack = userSearchText(user);
+
+  return searchTokens.every((token) => haystack.includes(token));
+}
+
+function matchesFilter(user: AdminUserData, filter: UserFilter) {
+  const status = user.status.toUpperCase();
+
+  switch (filter) {
+    case "activos":
+      return status === "ACTIVO";
+    case "inactivos":
+      return status === "INACTIVO";
+    case "bloqueados":
+      return status === "BLOQUEADO";
+    case "administradores":
+      return user.role === "ADMIN";
+    case "ahorradores":
+      return user.role === "AHORRADOR";
+    case "acceso-pendiente":
+      return !user.authUserId;
+    case "acceso-activo":
+      return Boolean(user.authUserId);
+    case "ahorro-habilitado":
+      return Boolean(user.account);
+    case "sin-cuenta":
+      return !user.account;
+    default:
+      return true;
+  }
 }
 
 function ActivateAccessButton() {
@@ -109,20 +264,71 @@ function EnableSavingsButton() {
   );
 }
 
+function RevokeAccessButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" variant="secondary" className="w-full" disabled={pending}>
+      <ShieldOff className="h-4 w-4" />
+      {pending ? "Revocando..." : "Revocar acceso"}
+    </Button>
+  );
+}
+
+function DeleteTestUserButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" variant="danger" className="w-full" disabled={pending}>
+      <Trash2 className="h-4 w-4" />
+      {pending ? "Eliminando..." : "Eliminar usuario de prueba"}
+    </Button>
+  );
+}
+
 export function AdminUsersClient({ users }: AdminUsersClientProps) {
-  const [selectedUserName, setSelectedUserName] = useState(users.find((user) => user.esAhorrador)?.fullName ?? users[0]?.fullName ?? "");
+  const [selectedUserId, setSelectedUserId] = useState(users.find((user) => user.esAhorrador)?.id ?? users[0]?.id ?? "");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterValue, setFilterValue] = useState<UserFilter>("todos");
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [createPanelOpen, setCreatePanelOpen] = useState(false);
   const [editPanelOpen, setEditPanelOpen] = useState(false);
   const [savingsPanelOpen, setSavingsPanelOpen] = useState(false);
   const [initialBalance, setInitialBalance] = useState("");
+  const [initialBalanceDate, setInitialBalanceDate] = useState(getTodayInputDate);
 
+  const normalizedSearch = useMemo(() => normalizeSearchValue(searchTerm), [searchTerm]);
+  const visibleUsers = useMemo(
+    () => users.filter((user) => matchesSearch(user, normalizedSearch) && matchesFilter(user, filterValue)),
+    [filterValue, normalizedSearch, users]
+  );
   const selectedUser = useMemo(
-    () => users.find((user) => user.fullName === selectedUserName) ?? users[0] ?? null,
-    [selectedUserName, users]
+    () => visibleUsers.find((user) => user.id === selectedUserId) ?? visibleUsers[0] ?? null,
+    [selectedUserId, visibleUsers]
   );
 
-  if (!selectedUser) {
+  useEffect(() => {
+    if (visibleUsers.length === 0) {
+      if (selectedUserId) {
+        setSelectedUserId("");
+      }
+      setEditPanelOpen(false);
+      setSavingsPanelOpen(false);
+      setMobileDetailOpen(false);
+      return;
+    }
+
+    if (!visibleUsers.some((user) => user.id === selectedUserId)) {
+      setSelectedUserId(visibleUsers[0].id);
+      setEditPanelOpen(false);
+      setSavingsPanelOpen(false);
+      setInitialBalance("");
+      setInitialBalanceDate(getTodayInputDate());
+      setMobileDetailOpen(false);
+    }
+  }, [selectedUserId, visibleUsers]);
+
+  if (users.length === 0) {
     return (
       <Card className="min-w-0 border-amber-200 bg-amber-50 text-amber-900">
         <p className="text-sm font-semibold">No se pudieron cargar los usuarios administrativos.</p>
@@ -131,7 +337,7 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
   }
 
   const showMobileList = !mobileDetailOpen;
-  const visibleUsers = users;
+  const selectedUserCanShowDeleteTestUser = selectedUser ? canShowDeleteTestUser(selectedUser) : false;
 
   return (
     <div className="space-y-8 min-w-0 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-0">
@@ -165,10 +371,19 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_190px]">
             <div className="relative min-w-0">
               <Search className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-slate-400" />
-              <Input className="pl-10" placeholder="Buscar usuario..." />
+              <Input
+                className="pl-10"
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Buscar usuario..."
+                value={searchTerm}
+              />
             </div>
-            <Select defaultValue="todos">
-              <option value="todos">Todos los estados</option>
+            <Select value={filterValue} onChange={(event) => setFilterValue(event.target.value as UserFilter)} aria-label="Filtrar usuarios">
+              {userFilterOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </Select>
           </div>
 
@@ -178,42 +393,50 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
               <span className="hidden sm:block">Estado</span>
             </div>
             <div className="divide-y divide-slate-100">
-              {visibleUsers.map((user) => {
-                const selected = user.fullName === selectedUserName;
+              {visibleUsers.length > 0 ? (
+                visibleUsers.map((user) => {
+                  const selected = user.id === selectedUserId;
 
-                return (
-                  <button
-                    key={user.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedUserName(user.fullName);
-                      setMobileDetailOpen(true);
-                      setEditPanelOpen(false);
-                      setSavingsPanelOpen(false);
-                    }}
-                    className={cn(
-                      "grid w-full grid-cols-1 items-center gap-3 px-4 py-4 text-left transition sm:grid-cols-[minmax(0,1fr)_140px] sm:gap-0",
-                      selected ? "bg-blue-50" : "bg-white hover:bg-slate-50"
-                    )}
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
+                  return (
+                    <button
+                      key={user.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedUserId(user.id);
+                        setMobileDetailOpen(true);
+                        setEditPanelOpen(false);
+                        setSavingsPanelOpen(false);
+                        setInitialBalance("");
+                        setInitialBalanceDate(getTodayInputDate());
+                      }}
+                      className={cn(
+                        "grid w-full grid-cols-1 items-center gap-3 px-4 py-4 text-left transition sm:grid-cols-[minmax(0,1fr)_140px] sm:gap-0",
+                        selected ? "bg-blue-50" : "bg-white hover:bg-slate-50"
+                      )}
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
                         <AvatarPlaceholder name={user.fullName} size="sm" />
                         <div className="min-w-0">
-                        <span className="block break-words font-bold leading-5 text-slate-950">{user.fullName}</span>
-                        <span className="block break-words text-xs leading-5 text-slate-500">{user.email}</span>
+                          <span className="block break-words font-bold leading-5 text-slate-950">{user.fullName}</span>
+                          <span className="block break-words text-xs leading-5 text-slate-500">{user.email}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="justify-self-start sm:justify-self-end">
-                      <Badge tone={roleTone(user.role)}>{roleLabel(user.role)}</Badge>
-                    </div>
-                  </button>
-                );
-              })}
+                      <div className="justify-self-start sm:justify-self-end">
+                        <Badge tone={roleTone(user.role)}>{roleLabel(user.role)}</Badge>
+                      </div>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="px-4 py-8 text-sm font-semibold text-slate-500">
+                  No se encontraron usuarios con esos filtros.
+                </div>
+              )}
             </div>
           </div>
 
           <div className="mt-5 flex flex-col justify-between gap-3 text-sm text-slate-500 sm:flex-row sm:items-center">
-            <span>Mostrando 1 a {visibleUsers.length} de {visibleUsers.length} usuarios</span>
+            <span>Mostrando {visibleUsers.length} de {users.length} usuarios</span>
             <div className="flex items-center gap-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0057d9] text-sm font-extrabold text-white">1</span>
             </div>
@@ -221,6 +444,8 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
         </Card>
 
         <Card className={cn("min-w-0 max-w-full", mobileDetailOpen ? "block" : "hidden lg:block")}>
+          {selectedUser ? (
+            <>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
               {mobileDetailOpen ? (
@@ -315,14 +540,18 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <Link href="/admin/movimientos" className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0057d9] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#004aad]">
-              <PlusCircle className="h-4 w-4" />
-              Registrar movimiento
-            </Link>
-            <Link href="/admin/estados-cuenta" className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#004aad] ring-1 ring-[#0057d9]/25 transition hover:bg-blue-50">
-              <FileText className="h-4 w-4" />
-              Generar estado de cuenta
-            </Link>
+            {selectedUser.account ? (
+              <>
+                <Link href="/admin/movimientos" className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0057d9] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#004aad]">
+                  <PlusCircle className="h-4 w-4" />
+                  Registrar movimiento
+                </Link>
+                <Link href="/admin/estados-cuenta" className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#004aad] ring-1 ring-[#0057d9]/25 transition hover:bg-blue-50">
+                  <FileText className="h-4 w-4" />
+                  Generar estado de cuenta
+                </Link>
+              </>
+            ) : null}
             <Button
               type="button"
               variant="secondary"
@@ -344,6 +573,7 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
                   setSavingsPanelOpen((current) => !current);
                   setEditPanelOpen(false);
                   setInitialBalance("");
+                  setInitialBalanceDate(getTodayInputDate());
                 }}
               >
                 <Landmark className="h-4 w-4" />
@@ -356,7 +586,50 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
                 <ActivateAccessButton />
               </form>
             ) : null}
+            {selectedUser.authUserId ? (
+              <form
+                action={revokeUserAccessAction}
+                onSubmit={(event) => {
+                  if (!window.confirm(`¿Revocar el acceso de ${selectedUser.fullName}? El perfil, la cuenta y los movimientos se conservarán.`)) {
+                    event.preventDefault();
+                  }
+                }}
+              >
+                <input type="hidden" name="profile_id" value={selectedUser.id} />
+                <RevokeAccessButton />
+              </form>
+            ) : null}
           </div>
+
+          {selectedUserCanShowDeleteTestUser ? (
+            <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm leading-6 text-red-900">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-extrabold">Eliminación protegida</p>
+                  <p className="mt-1">
+                    Esta acción solo debe usarse para usuarios de prueba. No se recomienda eliminar usuarios con historial financiero.
+                  </p>
+                  <form
+                    action={deleteTestUserAction}
+                    className="mt-3"
+                    onSubmit={(event) => {
+                      const confirmed = window.confirm(
+                        `¿Eliminar definitivamente el usuario de prueba ${selectedUser.fullName}? Esta acción eliminará el perfil, la cuenta sin saldo, movimientos permitidos, notificaciones y el usuario Auth si existe.`
+                      );
+
+                      if (!confirmed) {
+                        event.preventDefault();
+                      }
+                    }}
+                  >
+                    <input type="hidden" name="profile_id" value={selectedUser.id} />
+                    <DeleteTestUserButton />
+                  </form>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           {editPanelOpen ? (
             <div key={`edit-${selectedUser.id}`} className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
@@ -402,6 +675,9 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
                     <option value="INACTIVO">INACTIVO</option>
                     <option value="BLOQUEADO">BLOQUEADO</option>
                   </Select>
+                  <span className="mt-2 block text-xs font-semibold leading-5 text-slate-500">
+                    INACTIVO o BLOQUEADO impiden el ingreso al portal sin eliminar datos financieros.
+                  </span>
                 </label>
                 <div className="grid gap-3 md:col-span-2 sm:grid-cols-2">
                   <Button type="button" variant="secondary" className="w-full" onClick={() => setEditPanelOpen(false)}>
@@ -441,6 +717,16 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
                     onChange={(event) => setInitialBalance(formatMoneyInput(event.target.value))}
                   />
                   <input type="hidden" name="initial_balance" value={cleanMoneyInput(initialBalance)} />
+                </label>
+                <label>
+                  <span className="mb-2 block text-sm font-bold text-slate-700">Fecha saldo inicial</span>
+                  <Input
+                    name="initial_balance_date"
+                    type="date"
+                    value={initialBalanceDate}
+                    onChange={(event) => setInitialBalanceDate(event.target.value)}
+                    required
+                  />
                 </label>
                 <div className="rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-slate-600 md:col-span-2">
                   Si registras un saldo inicial mayor a cero, se creará automáticamente un movimiento de tipo Saldo inicial.
@@ -502,6 +788,15 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
               />
             </div>
           </div>
+            </>
+          ) : (
+            <div className="flex min-h-[320px] items-center justify-center rounded-2xl bg-slate-50 p-6 text-center">
+              <div className="max-w-md">
+                <h3 className="text-xl font-extrabold text-slate-950">No hay usuarios visibles</h3>
+                <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">No se encontraron usuarios con esos filtros.</p>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </div>

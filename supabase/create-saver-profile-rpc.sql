@@ -4,6 +4,8 @@
 -- No requiere service_role_key ni secret keys.
 
 drop function if exists public.create_saver_profile(text, text, text, text, text, numeric);
+drop function if exists public.create_internal_user_profile(text, text, text, text, text, boolean, text, numeric);
+drop function if exists public.create_internal_user_profile(text, text, text, text, text, boolean, text, numeric, date);
 
 create or replace function public.create_internal_user_profile(
   p_full_name text,
@@ -13,7 +15,8 @@ create or replace function public.create_internal_user_profile(
   p_document_id text default null,
   p_create_account boolean default false,
   p_account_number text default null,
-  p_initial_balance numeric default 0
+  p_initial_balance numeric default 0,
+  p_initial_balance_date date default current_date
 )
 returns jsonb
 language plpgsql
@@ -27,6 +30,7 @@ declare
   v_movement_id uuid;
   v_account_number text;
   v_initial_balance numeric;
+  v_initial_balance_date date;
   v_amount_text text;
   v_role public.user_role;
 begin
@@ -49,6 +53,7 @@ begin
   p_document_id := nullif(trim(p_document_id), '');
   p_account_number := nullif(trim(p_account_number), '');
   v_initial_balance := coalesce(p_initial_balance, 0);
+  v_initial_balance_date := coalesce(p_initial_balance_date, current_date);
 
   if p_full_name is null then
     raise exception 'El nombre completo es obligatorio.';
@@ -158,7 +163,7 @@ begin
         'Saldo inicial registrado al crear el usuario interno.',
         v_initial_balance,
         v_initial_balance,
-        current_date,
+        v_initial_balance_date,
         now()
       )
       returning id into v_movement_id;
@@ -193,6 +198,7 @@ begin
       'access_status', 'PENDIENTE',
       'has_savings_account', coalesce(p_create_account, false),
       'initial_balance', v_initial_balance,
+      'initial_balance_date', v_initial_balance_date,
       'initial_balance_text', v_amount_text
     ),
     now()
@@ -207,14 +213,15 @@ begin
     'access_status', 'PENDIENTE',
     'role', v_role::text,
     'has_savings_account', coalesce(p_create_account, false),
-    'initial_balance', v_initial_balance
+    'initial_balance', v_initial_balance,
+    'initial_balance_date', v_initial_balance_date
   );
 end;
 $$;
 
-revoke execute on function public.create_internal_user_profile(text, text, text, text, text, boolean, text, numeric) from public;
-revoke execute on function public.create_internal_user_profile(text, text, text, text, text, boolean, text, numeric) from anon;
-grant execute on function public.create_internal_user_profile(text, text, text, text, text, boolean, text, numeric) to authenticated;
+revoke execute on function public.create_internal_user_profile(text, text, text, text, text, boolean, text, numeric, date) from public;
+revoke execute on function public.create_internal_user_profile(text, text, text, text, text, boolean, text, numeric, date) from anon;
+grant execute on function public.create_internal_user_profile(text, text, text, text, text, boolean, text, numeric, date) to authenticated;
 
 -- Pendiente para proximas fases:
 -- - Activar acceso creando el usuario en Supabase Auth y enlazando profiles.auth_user_id.

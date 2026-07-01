@@ -139,10 +139,14 @@ revoke execute on function public.update_internal_user_profile(uuid, text, text,
 revoke execute on function public.update_internal_user_profile(uuid, text, text, text, text, text) from anon;
 grant execute on function public.update_internal_user_profile(uuid, text, text, text, text, text) to authenticated;
 
+drop function if exists public.enable_savings_account(uuid, text, numeric);
+drop function if exists public.enable_savings_account(uuid, text, numeric, date);
+
 create or replace function public.enable_savings_account(
   p_profile_id uuid,
   p_account_number text default null,
-  p_initial_balance numeric default 0
+  p_initial_balance numeric default 0,
+  p_initial_balance_date date default current_date
 )
 returns jsonb
 language plpgsql
@@ -156,6 +160,7 @@ declare
   v_movement_id uuid;
   v_account_number text;
   v_initial_balance numeric;
+  v_initial_balance_date date;
   v_amount_text text;
 begin
   select *
@@ -190,6 +195,7 @@ begin
 
   p_account_number := nullif(trim(p_account_number), '');
   v_initial_balance := coalesce(p_initial_balance, 0);
+  v_initial_balance_date := coalesce(p_initial_balance_date, current_date);
 
   if v_initial_balance < 0 then
     raise exception 'El saldo inicial no puede ser negativo.';
@@ -252,7 +258,7 @@ begin
       'Saldo inicial registrado al habilitar la cuenta de ahorro.',
       v_initial_balance,
       v_initial_balance,
-      current_date,
+      v_initial_balance_date,
       now()
     )
     returning id into v_movement_id;
@@ -280,6 +286,7 @@ begin
       'movement_id', v_movement_id,
       'account_number', v_account_number,
       'initial_balance', v_initial_balance,
+      'initial_balance_date', v_initial_balance_date,
       'initial_balance_text', v_amount_text
     ),
     now()
@@ -291,11 +298,12 @@ begin
     'movement_id', v_movement_id,
     'account_number', v_account_number,
     'initial_balance', v_initial_balance,
+    'initial_balance_date', v_initial_balance_date,
     'current_balance', v_initial_balance
   );
 end;
 $$;
 
-revoke execute on function public.enable_savings_account(uuid, text, numeric) from public;
-revoke execute on function public.enable_savings_account(uuid, text, numeric) from anon;
-grant execute on function public.enable_savings_account(uuid, text, numeric) to authenticated;
+revoke execute on function public.enable_savings_account(uuid, text, numeric, date) from public;
+revoke execute on function public.enable_savings_account(uuid, text, numeric, date) from anon;
+grant execute on function public.enable_savings_account(uuid, text, numeric, date) to authenticated;

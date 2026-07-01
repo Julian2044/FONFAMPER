@@ -47,6 +47,22 @@ function resolveFlashMessage(searchParams?: AdminUsersPageProps["searchParams"])
     };
   }
 
+  if (searchParams?.success === "access_revoked") {
+    return {
+      tone: "success" as const,
+      message: "Acceso revocado correctamente. El usuario queda como acceso pendiente.",
+      temporaryPassword: null
+    };
+  }
+
+  if (searchParams?.success === "test_user_deleted") {
+    return {
+      tone: "success" as const,
+      message: "Usuario de prueba eliminado correctamente.",
+      temporaryPassword: null
+    };
+  }
+
   if (searchParams?.error) {
     return {
       tone: "error" as const,
