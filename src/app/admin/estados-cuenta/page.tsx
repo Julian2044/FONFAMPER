@@ -1,6 +1,6 @@
-import Link from "next/link";
-import { FileText, Printer, Search } from "lucide-react";
+import { FileText, Search } from "lucide-react";
 import { StatementMovementList } from "@/components/finance/StatementMovementList";
+import { StatementPdfActions } from "@/components/finance/StatementPdfActions";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -98,21 +98,7 @@ export default async function AdminStatementsPage({ searchParams }: AdminStateme
           </Button>
         </form>
         <div className="mt-4 flex justify-end">
-          {pdfHref ? (
-            <Link
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#004aad] ring-1 ring-[#0057d9]/25 transition hover:bg-blue-50 sm:w-auto"
-              download
-              href={pdfHref}
-            >
-              <Printer className="h-4 w-4" />
-              Generar PDF
-            </Link>
-          ) : (
-            <Button className="w-full sm:w-auto" disabled type="button" variant="secondary">
-              <Printer className="h-4 w-4" />
-              Generar PDF
-            </Button>
-          )}
+          <StatementPdfActions className="w-full sm:w-auto" pdfHref={pdfHref} disabled={!statement} />
         </div>
       </Card>
 
