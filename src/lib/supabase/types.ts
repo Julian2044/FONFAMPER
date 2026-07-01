@@ -48,6 +48,18 @@ export type Database = {
         movement_date: string;
         created_at: string;
       }>;
+      movement_attachments: TableRow<{
+        id: string;
+        movement_id: string;
+        profile_id: string;
+        uploaded_by: string | null;
+        bucket: string;
+        storage_path: string;
+        original_filename: string;
+        mime_type: string;
+        size_bytes: number;
+        created_at: string;
+      }>;
       notifications: TableRow<{
         id: string;
         profile_id: string;

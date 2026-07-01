@@ -6,6 +6,7 @@ import { formatDate } from "./format";
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type AccountRow = Database["public"]["Tables"]["accounts"]["Row"];
 type MovementRow = Database["public"]["Tables"]["movements"]["Row"];
+type MovementAttachmentRow = Database["public"]["Tables"]["movement_attachments"]["Row"];
 type NotificationRow = Database["public"]["Tables"]["notifications"]["Row"];
 
 type QueryIssue = {
@@ -16,6 +17,7 @@ type QueryIssue = {
 };
 
 export type AhorradorMovement = {
+  id: string;
   date: string;
   concept: string;
   type: "Saldo inicial" | "Aporte" | "Retiro" | "Ajuste" | "Utilidad";
@@ -23,6 +25,14 @@ export type AhorradorMovement = {
   balance: number;
   status: "Completado";
   createdAt: string;
+  attachment: MovementAttachmentData | null;
+};
+
+export type MovementAttachmentData = {
+  id: string;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
 };
 
 export type AhorradorNotification = {
@@ -87,22 +97,32 @@ function issuesToMessage(issues: QueryIssue[]) {
     .join(" | ");
 }
 
-function mapMovement(movement: MovementRow): AhorradorMovement {
+function mapMovement(movement: MovementRow, attachmentsByMovementId: Map<string, MovementAttachmentRow>): AhorradorMovement {
   const typeMap: Record<string, AhorradorMovement["type"]> = {
     SALDO_INICIAL: "Saldo inicial",
     APORTE: "Aporte",
     RETIRO: "Retiro",
     AJUSTE: "Ajuste"
   };
+  const attachment = attachmentsByMovementId.get(movement.id);
 
   return {
+    id: movement.id,
     date: movement.movement_date,
     concept: movement.concept,
     type: typeMap[movement.movement_type] ?? "Ajuste",
     value: Number(movement.amount),
     balance: Number(movement.balance_after),
     status: "Completado",
-    createdAt: movement.created_at
+    createdAt: movement.created_at,
+    attachment: attachment
+      ? {
+          id: attachment.id,
+          originalFilename: attachment.original_filename,
+          mimeType: attachment.mime_type,
+          sizeBytes: Number(attachment.size_bytes)
+        }
+      : null
   };
 }
 
@@ -164,7 +184,7 @@ export async function getDemoAhorradorData(): Promise<DemoAhorradorData> {
   const profile = currentProfile;
   const profileIssue: QueryIssue | null = null;
 
-  const [accountResponse, movementsResponse, notificationsResponse] = await Promise.all([
+  const [accountResponse, movementsResponse, attachmentsResponse, notificationsResponse] = await Promise.all([
     supabase
       .schema("public")
       .from("accounts")
@@ -179,6 +199,12 @@ export async function getDemoAhorradorData(): Promise<DemoAhorradorData> {
       .order("movement_date", { ascending: false }),
     supabase
       .schema("public")
+      .from("movement_attachments")
+      .select("*")
+      .eq("profile_id", profile.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .schema("public")
       .from("notifications")
       .select("*")
       .eq("profile_id", profile.id)
@@ -187,13 +213,16 @@ export async function getDemoAhorradorData(): Promise<DemoAhorradorData> {
 
   const accountIssue = toIssue(accountResponse.error);
   const movementsIssue = toIssue(movementsResponse.error);
+  const attachmentsIssue = toIssue(attachmentsResponse.error);
   const notificationsIssue = toIssue(notificationsResponse.error);
 
   if (accountIssue) console.error("[ahorrador-data] accounts", accountResponse.error);
   if (movementsIssue) console.error("[ahorrador-data] movements", movementsResponse.error);
+  if (attachmentsIssue) console.error("[ahorrador-data] movement_attachments", attachmentsResponse.error);
   if (notificationsIssue) console.error("[ahorrador-data] notifications", notificationsResponse.error);
 
-  const movements = (movementsResponse.data ?? []).map(mapMovement);
+  const attachmentsByMovementId = new Map(((attachmentsResponse.data ?? []) as MovementAttachmentRow[]).map((attachment) => [attachment.movement_id, attachment]));
+  const movements = (movementsResponse.data ?? []).map((movement) => mapMovement(movement, attachmentsByMovementId));
   const notifications = (notificationsResponse.data ?? []).map(mapNotification);
   const latestMovement = movements[0] ?? null;
   const unreadNotificationsCount = notifications.filter((notification) => !notification.isRead).length;

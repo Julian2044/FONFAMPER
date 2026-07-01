@@ -6,6 +6,7 @@ import { formatDate } from "@/lib/fonfamper/format";
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type AccountRow = Database["public"]["Tables"]["accounts"]["Row"];
 type MovementRow = Database["public"]["Tables"]["movements"]["Row"];
+type MovementAttachmentRow = Database["public"]["Tables"]["movement_attachments"]["Row"];
 type AuditLogRow = Database["public"]["Tables"]["audit_logs"]["Row"];
 
 type QueryIssue = {
@@ -55,6 +56,14 @@ export type AdminMovementData = {
   balanceAfter: number;
   movementDate: string;
   createdAt: string;
+  attachment: MovementAttachmentData | null;
+};
+
+export type MovementAttachmentData = {
+  id: string;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
 };
 
 export type AdminAuditLogData = {
@@ -191,11 +200,13 @@ function buildMonthTotals(movements: AdminMovementData[]) {
 
 function buildMovementRows(
   movements: MovementRow[],
-  profilesById: Map<string, ProfileRow>
+  profilesById: Map<string, ProfileRow>,
+  attachmentsByMovementId: Map<string, MovementAttachmentRow>
 ): AdminMovementData[] {
   return movements.map((movement) => {
     const profile = profilesById.get(movement.profile_id);
     const createdBy = movement.created_by ? profilesById.get(movement.created_by) : null;
+    const attachment = attachmentsByMovementId.get(movement.id);
 
     return {
       id: movement.id,
@@ -211,7 +222,15 @@ function buildMovementRows(
       amount: Number(movement.amount),
       balanceAfter: Number(movement.balance_after),
       movementDate: movement.movement_date,
-      createdAt: movement.created_at
+      createdAt: movement.created_at,
+      attachment: attachment
+        ? {
+            id: attachment.id,
+            originalFilename: attachment.original_filename,
+            mimeType: attachment.mime_type,
+            sizeBytes: Number(attachment.size_bytes)
+          }
+        : null
     };
   });
 }
@@ -272,29 +291,34 @@ export async function getDemoAdminData(): Promise<DemoAdminData> {
   const supabase = createClientServer();
   const currentProfile = await getCurrentProfile();
 
-  const [profilesResponse, accountsResponse, movementsResponse, auditLogsResponse] = await Promise.all([
+  const [profilesResponse, accountsResponse, movementsResponse, attachmentsResponse, auditLogsResponse] = await Promise.all([
     supabase.schema("public").from("profiles").select("*").order("full_name", { ascending: true }),
     supabase.schema("public").from("accounts").select("*").order("created_at", { ascending: false }),
     supabase.schema("public").from("movements").select("*").order("created_at", { ascending: false }),
+    supabase.schema("public").from("movement_attachments").select("*").order("created_at", { ascending: false }),
     supabase.schema("public").from("audit_logs").select("*").order("created_at", { ascending: false })
   ]);
 
   const profileIssue = toIssue(profilesResponse.error);
   const accountIssue = toIssue(accountsResponse.error);
   const movementIssue = toIssue(movementsResponse.error);
+  const attachmentIssue = toIssue(attachmentsResponse.error);
   const auditIssue = toIssue(auditLogsResponse.error);
 
   if (profileIssue) console.error("[admin-data] profiles", profilesResponse.error);
   if (accountIssue) console.error("[admin-data] accounts", accountsResponse.error);
   if (movementIssue) console.error("[admin-data] movements", movementsResponse.error);
+  if (attachmentIssue) console.error("[admin-data] movement_attachments", attachmentsResponse.error);
   if (auditIssue) console.error("[admin-data] audit_logs", auditLogsResponse.error);
 
   const profiles = profilesResponse.data ?? [];
   const accounts = accountsResponse.data ?? [];
   const movementsRaw = movementsResponse.data ?? [];
+  const attachmentsRaw = attachmentsResponse.data ?? [];
   const auditRaw = auditLogsResponse.data ?? [];
   const profilesById = new Map(profiles.map((profile) => [profile.id, profile]));
-  const movements = buildMovementRows(movementsRaw, profilesById);
+  const attachmentsByMovementId = new Map((attachmentsRaw as MovementAttachmentRow[]).map((attachment) => [attachment.movement_id, attachment]));
+  const movements = buildMovementRows(movementsRaw, profilesById, attachmentsByMovementId);
   const users = buildUserRows(profiles, accounts, movements);
   const auditLogs = buildAuditRows(auditRaw, profilesById);
   const adminProfile = currentProfile?.role === "ADMIN" ? currentProfile : profiles.find((profile) => profile.role === "ADMIN") ?? null;

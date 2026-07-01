@@ -21,6 +21,13 @@ function resolveFlashMessage(searchParams?: AdminMovementsPageProps["searchParam
     };
   }
 
+  if (searchParams?.success === "movement_registered_support_failed") {
+    return {
+      tone: "warning" as const,
+      message: "El movimiento fue registrado, pero no se pudo guardar el soporte."
+    };
+  }
+
   if (searchParams?.error) {
     return {
       tone: "error" as const,
@@ -49,7 +56,15 @@ export default async function AdminMovementsPage({ searchParams }: AdminMovement
       ) : null}
 
       {flash ? (
-        <Card className={flash.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-red-200 bg-red-50 text-red-900"}>
+        <Card
+          className={
+            flash.tone === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+              : flash.tone === "warning"
+                ? "border-amber-200 bg-amber-50 text-amber-900"
+                : "border-red-200 bg-red-50 text-red-900"
+          }
+        >
           <div className="flex items-start gap-3">
             <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
             <p className="text-sm font-semibold">{flash.message}</p>

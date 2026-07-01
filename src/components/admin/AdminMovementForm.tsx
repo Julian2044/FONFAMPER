@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { CalendarDays, CloudUpload, DollarSign, FileText, Save, UserRound } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { CalendarDays, CloudUpload, FileText, Save, UserRound, X } from "lucide-react";
 import { DataTable } from "@/components/ui/DataTable";
+import { MovementSupportModal } from "@/components/finance/MovementSupportModal";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -23,6 +24,9 @@ const movementTypeOptions = [
   { value: "RETIRO", label: "Retiro" },
   { value: "AJUSTE", label: "Ajuste" }
 ] as const;
+
+const MAX_SUPPORT_SIZE_BYTES = 10 * 1024 * 1024;
+const ALLOWED_SUPPORT_MIME_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
 
 function todayInputValue() {
   const now = new Date();
@@ -59,11 +63,27 @@ function formatMoneyInput(value: string) {
   return `$ ${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 }).format(Number(cleaned))}`;
 }
 
-function SubmitButton() {
+function formatFileSize(bytes: number) {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+function SupportButton({ attachment }: { attachment: AdminUserData["recentMovements"][number]["attachment"] }) {
+  if (!attachment) {
+    return <span className="text-sm font-semibold text-slate-400">Sin soporte</span>;
+  }
+
+  return <MovementSupportModal attachmentId={attachment.id} filename={attachment.originalFilename} />;
+}
+
+function SubmitButton({ disabled = false }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
 
   return (
-    <Button className="w-full" type="submit" disabled={pending}>
+    <Button className="w-full" type="submit" disabled={pending || disabled}>
       <Save className="h-4 w-4" />
       {pending ? "Registrando..." : "Registrar movimiento"}
     </Button>
@@ -81,6 +101,9 @@ export function AdminMovementForm({ users }: AdminMovementFormProps) {
   const [concept, setConcept] = useState("");
   const [description, setDescription] = useState("");
   const [observations, setObservations] = useState("");
+  const [supportFile, setSupportFile] = useState<File | null>(null);
+  const [supportError, setSupportError] = useState<string | null>(null);
+  const supportInputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedUser = saverUsers.find((user) => user.id === selectedUserId) ?? initialUser;
   const currentBalance = selectedUser?.summary.currentBalance ?? 0;
@@ -93,11 +116,47 @@ export function AdminMovementForm({ users }: AdminMovementFormProps) {
       : currentBalance + parsedAmount;
   const previewBalanceTone = movementType === "RETIRO" && parsedAmount > currentBalance ? "text-red-600" : "text-[#0057d9]";
 
+  function clearSupportFile() {
+    setSupportFile(null);
+    setSupportError(null);
+
+    if (supportInputRef.current) {
+      supportInputRef.current.value = "";
+    }
+  }
+
+  function handleSupportFileChange(file: File | null) {
+    setSupportError(null);
+    setSupportFile(null);
+
+    if (!file) {
+      return;
+    }
+
+    if (!ALLOWED_SUPPORT_MIME_TYPES.has(file.type)) {
+      setSupportError("El soporte debe ser PDF, JPG o PNG.");
+      if (supportInputRef.current) {
+        supportInputRef.current.value = "";
+      }
+      return;
+    }
+
+    if (file.size > MAX_SUPPORT_SIZE_BYTES) {
+      setSupportError("El soporte no puede pesar más de 10 MB.");
+      if (supportInputRef.current) {
+        supportInputRef.current.value = "";
+      }
+      return;
+    }
+
+    setSupportFile(file);
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
         <Card>
-          <form action={registerMovementAction} className="grid gap-5 md:grid-cols-2">
+          <form action={registerMovementAction} encType="multipart/form-data" className="grid gap-5 md:grid-cols-2">
             <label className="md:col-span-2">
               <span className="mb-2 block text-sm font-bold text-slate-700">Usuario</span>
               <div className="relative">
@@ -148,10 +207,8 @@ export function AdminMovementForm({ users }: AdminMovementFormProps) {
 
             <label>
               <span className="mb-2 block text-sm font-bold text-slate-700">Valor</span>
-              <div className="relative">
-                <DollarSign className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-slate-400" />
+              <div>
                 <Input
-                  className="pl-10"
                   type="text"
                   inputMode="numeric"
                   placeholder="$ 100.000"
@@ -197,19 +254,50 @@ export function AdminMovementForm({ users }: AdminMovementFormProps) {
             </label>
 
             <div className="md:col-span-2">
-              <div className="mt-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center sm:p-8">
+              <span className="mb-2 block text-sm font-bold text-slate-700">Soporte opcional</span>
+              <label
+                className={cn(
+                  "mt-2 block cursor-pointer rounded-2xl border border-dashed bg-slate-50 p-6 text-center transition sm:p-8",
+                  supportError ? "border-red-300 bg-red-50" : "border-slate-300 hover:border-[#0057d9] hover:bg-blue-50/40"
+                )}
+              >
+                <input
+                  ref={supportInputRef}
+                  name="support_file"
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png"
+                  className="sr-only"
+                  onChange={(event) => handleSupportFileChange(event.target.files?.[0] ?? null)}
+                />
                 <CloudUpload className="mx-auto h-11 w-11 text-[#0057d9]" />
-                <p className="mt-3 font-extrabold text-slate-950">Arrastra y suelta tu archivo aquí</p>
-                <p className="mt-1 text-sm text-slate-500">o haz clic para seleccionar un archivo</p>
-                <p className="mt-3 text-xs text-slate-400">Formatos permitidos: PDF, JPG, PNG (Máx. 10 MB)</p>
-              </div>
+                <p className="mt-3 font-extrabold text-slate-950">Adjunta comprobante si aplica</p>
+                <p className="mt-1 text-sm text-slate-500">Haz clic para seleccionar un archivo</p>
+                <p className="mt-3 text-xs text-slate-400">PDF, JPG o PNG. Máx. 10 MB</p>
+              </label>
+              {supportFile || supportError ? (
+                <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    {supportFile ? (
+                      <>
+                        <p className="break-words text-sm font-extrabold text-slate-950">{supportFile.name}</p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">{formatFileSize(supportFile.size)}</p>
+                      </>
+                    ) : null}
+                    {supportError ? <p className="break-words text-sm font-bold text-red-700">{supportError}</p> : null}
+                  </div>
+                  <Button type="button" variant="ghost" className="w-full sm:w-auto" onClick={clearSupportFile}>
+                    <X className="h-4 w-4" />
+                    Quitar archivo
+                  </Button>
+                </div>
+              ) : null}
             </div>
 
             <div className="md:col-span-2 grid gap-3 sm:grid-cols-2">
               <Button variant="secondary" className="w-full" type="button">
                 Cancelar
               </Button>
-              <SubmitButton />
+              <SubmitButton disabled={Boolean(supportError)} />
             </div>
           </form>
         </Card>
@@ -267,6 +355,12 @@ export function AdminMovementForm({ users }: AdminMovementFormProps) {
                       <span className="text-slate-500">Saldo resultante</span>
                       <span className="whitespace-nowrap font-bold text-slate-950">{formatCurrencyCOP(movement.balanceAfter)}</span>
                     </div>
+                    {movement.attachment ? (
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-slate-500">Soporte</span>
+                        <SupportButton attachment={movement.attachment} />
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               ))}
@@ -279,7 +373,7 @@ export function AdminMovementForm({ users }: AdminMovementFormProps) {
         <h3 className="text-lg font-extrabold text-slate-950">Detalle de movimientos del usuario</h3>
         <div className="mt-5">
           <DataTable
-            columns={["Fecha", "Descripción", "Tipo", "Monto", "Saldo resultante"]}
+            columns={["Fecha", "Descripción", "Tipo", "Monto", "Saldo resultante", "Soporte"]}
             rows={(selectedUser?.recentMovements ?? []).map((movement) => [
               formatDate(movement.movementDate),
               movement.concept,
@@ -289,7 +383,8 @@ export function AdminMovementForm({ users }: AdminMovementFormProps) {
               </span>,
               <span key="balance" className="whitespace-nowrap font-bold text-slate-950">
                 {formatCurrencyCOP(movement.balanceAfter)}
-              </span>
+              </span>,
+              <SupportButton key="support" attachment={movement.attachment} />
             ])}
           />
         </div>

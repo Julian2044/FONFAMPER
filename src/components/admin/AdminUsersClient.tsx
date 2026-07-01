@@ -12,6 +12,7 @@ import {
   updateInternalUserAction
 } from "@/app/admin/usuarios/actions";
 import { AdminCreateSaverForm } from "@/components/admin/AdminCreateSaverForm";
+import { MovementSupportModal } from "@/components/finance/MovementSupportModal";
 import { AvatarPlaceholder } from "@/components/ui/AvatarPlaceholder";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -284,6 +285,14 @@ function DeleteTestUserButton() {
       {pending ? "Eliminando..." : "Eliminar usuario de prueba"}
     </Button>
   );
+}
+
+function MovementSupportButton({ attachment }: { attachment: AdminUserData["recentMovements"][number]["attachment"] }) {
+  if (!attachment) {
+    return <span className="text-sm font-semibold text-slate-400">Sin soporte</span>;
+  }
+
+  return <MovementSupportModal attachmentId={attachment.id} filename={attachment.originalFilename} />;
 }
 
 export function AdminUsersClient({ users }: AdminUsersClientProps) {
@@ -766,6 +775,12 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
                       <span className="text-slate-500">Saldo resultante</span>
                       <span className="whitespace-nowrap font-bold text-slate-950">{formatCurrencyCOP(movement.balanceAfter)}</span>
                     </div>
+                    {movement.attachment ? (
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-slate-500">Soporte</span>
+                        <MovementSupportButton attachment={movement.attachment} />
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               ))}
@@ -773,7 +788,7 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
 
             <div className="hidden lg:block">
               <DataTable
-                columns={["Fecha", "Descripción", "Tipo", "Monto", "Saldo resultante"]}
+                columns={["Fecha", "Descripción", "Tipo", "Monto", "Saldo resultante", "Soporte"]}
                 rows={selectedUser.recentMovements.map((movement) => [
                   formatDate(movement.movementDate),
                   movement.concept,
@@ -783,7 +798,8 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
                   </span>,
                   <span key="balance" className="whitespace-nowrap font-bold text-slate-950">
                     {formatCurrencyCOP(movement.balanceAfter)}
-                  </span>
+                  </span>,
+                  <MovementSupportButton key="support" attachment={movement.attachment} />
                 ])}
               />
             </div>

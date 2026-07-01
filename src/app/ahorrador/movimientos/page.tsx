@@ -1,6 +1,7 @@
 import { ArrowUpRight, CalendarDays, Download, Search } from "lucide-react";
 import { MoneyCard } from "@/components/finance/MoneyCard";
 import { MovementTable } from "@/components/finance/MovementTable";
+import { MovementSupportModal } from "@/components/finance/MovementSupportModal";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -76,6 +77,15 @@ export default async function SaverMovementsPage() {
             <div className="flex justify-between"><span className="text-slate-500">Tipo</span><Badge tone={latestMovement?.type === "Retiro" ? "red" : "green"}>{latestMovement?.type ?? "Aporte"}</Badge></div>
             <div className="flex justify-between"><span className="text-slate-500">Saldo resultante</span><span className="font-bold text-slate-950">{formatCurrencyCOP(latestMovement?.balance ?? summary.currentBalance)}</span></div>
           </div>
+          {latestMovement?.attachment ? (
+            <div className="mt-8">
+              <MovementSupportModal
+                attachmentId={latestMovement.attachment.id}
+                filename={latestMovement.attachment.originalFilename}
+                className="h-11 w-full gap-2 px-4 font-semibold"
+              />
+            </div>
+          ) : null}
           <Button variant="secondary" className="mt-8 w-full">
             <Download className="h-4 w-4" />
             Descargar historial

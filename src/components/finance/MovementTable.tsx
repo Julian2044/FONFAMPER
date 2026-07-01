@@ -2,6 +2,7 @@ import type { Movement } from "@/types/finance";
 import { formatCurrencyCOP, formatDate } from "@/lib/fonfamper/format";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
+import { MovementSupportModal } from "@/components/finance/MovementSupportModal";
 
 type MovementTableProps = {
   movements: Movement[];
@@ -25,13 +26,21 @@ function formatMovementValue(value: number, type: Movement["type"]) {
   return formatCurrencyCOP(value);
 }
 
+function SupportButton({ movement }: { movement: Movement }) {
+  if (!movement.attachment) {
+    return <span className="text-sm font-semibold text-slate-400">Sin soporte</span>;
+  }
+
+  return <MovementSupportModal attachmentId={movement.attachment.id} filename={movement.attachment.originalFilename} />;
+}
+
 export function MovementTable({ movements }: MovementTableProps) {
   return (
     <div className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-slate-200 bg-white">
       <div className="block lg:hidden">
         <div className="divide-y divide-slate-100">
           {movements.map((movement) => (
-            <div key={`${movement.date}-${movement.concept}`} className="space-y-3 px-5 py-4">
+            <div key={movement.id ?? `${movement.date}-${movement.concept}`} className="space-y-3 px-5 py-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="break-words font-semibold text-slate-950">{movement.concept}</p>
@@ -49,6 +58,11 @@ export function MovementTable({ movements }: MovementTableProps) {
                   <p className="mt-1 whitespace-nowrap font-semibold text-slate-900">{formatCurrencyCOP(movement.balance)}</p>
                 </div>
               </div>
+              {movement.attachment ? (
+                <div className="pt-1">
+                  <SupportButton movement={movement} />
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
@@ -56,13 +70,14 @@ export function MovementTable({ movements }: MovementTableProps) {
 
       <div className="hidden lg:block">
         <div className="w-full min-w-0 max-w-full overflow-x-auto">
-          <table className="w-full min-w-[920px] table-fixed divide-y divide-slate-200 text-left text-sm">
+          <table className="w-full min-w-[1040px] table-fixed divide-y divide-slate-200 text-left text-sm">
           <colgroup>
-              <col className="w-[15%]" />
-              <col className="w-[40%]" />
-              <col className="w-[15%]" />
-              <col className="w-[15%]" />
-              <col className="w-[15%]" />
+              <col className="w-[13%]" />
+              <col className="w-[34%]" />
+              <col className="w-[14%]" />
+              <col className="w-[14%]" />
+              <col className="w-[14%]" />
+              <col className="w-[11%]" />
           </colgroup>
             <thead className="bg-slate-50 text-xs uppercase text-slate-500">
               <tr>
@@ -71,11 +86,12 @@ export function MovementTable({ movements }: MovementTableProps) {
                 <th className="px-5 py-3 font-semibold">Tipo</th>
                 <th className="px-5 py-3 text-right font-semibold">Valor</th>
                 <th className="px-5 py-3 text-right font-semibold">Saldo</th>
+                <th className="px-5 py-3 font-semibold">Soporte</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {movements.map((movement) => (
-                <tr key={`${movement.date}-${movement.concept}`} className="hover:bg-slate-50">
+                <tr key={movement.id ?? `${movement.date}-${movement.concept}`} className="hover:bg-slate-50">
                   <td className="whitespace-nowrap px-5 py-4 align-top text-slate-600">{formatDate(movement.date)}</td>
                   <td className="break-words px-5 py-4 align-top font-medium leading-6 text-slate-900">{movement.concept}</td>
                   <td className="px-5 py-4 align-top">
@@ -88,6 +104,9 @@ export function MovementTable({ movements }: MovementTableProps) {
                   </td>
                   <td className="whitespace-nowrap px-5 py-4 align-top text-right font-semibold text-slate-900">
                     {formatCurrencyCOP(movement.balance)}
+                  </td>
+                  <td className="px-5 py-4 align-top">
+                    <SupportButton movement={movement} />
                   </td>
                 </tr>
               ))}
