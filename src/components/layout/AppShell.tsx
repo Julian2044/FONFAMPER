@@ -34,11 +34,11 @@ export function AppShell({ children, user, title, navigation, variant = "saver" 
       <Sidebar items={navigation} variant={variant} />
       <div className="min-w-0 lg:pl-[280px]">
         <Topbar user={user} title={title} variant={variant} {...topbarDemoLinks} />
-        <main className="mx-auto min-w-0 w-full max-w-7xl px-4 py-6 pb-[calc(6.75rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:py-8 lg:pb-10">
+        <main className="mx-auto min-w-0 w-full max-w-7xl px-4 py-6 pb-[calc(8.75rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:py-8 lg:pb-10">
           {children}
         </main>
       </div>
-      <MobileNav items={navigation} />
+      <MobileNav items={navigation} variant={variant} />
     </div>
   );
 }

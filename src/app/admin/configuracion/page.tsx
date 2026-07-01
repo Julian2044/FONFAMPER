@@ -1,6 +1,7 @@
 import { CheckCircle2, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { InstallAppCard } from "@/components/layout/InstallAppCard";
 import { getDemoAdminData } from "@/lib/fonfamper/admin-data";
 
 export const dynamic = "force-dynamic";
@@ -67,6 +68,7 @@ export default async function AdminSettingsPage() {
         </div>
 
         <div className="space-y-6">
+          <InstallAppCard />
           <SettingsCard title="Seguridad" rows={securityRows} />
           <SettingsCard title="Preferencias visuales" rows={visualPrefs} />
         </div>

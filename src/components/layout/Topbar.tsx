@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Bell,
   ChevronDown,
@@ -12,7 +13,6 @@ import {
   KeyRound,
   LayoutDashboard,
   LogOut,
-  Menu,
   Search,
   ShieldCheck,
   User,
@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import type { DemoUser } from "@/types/user";
 import { AvatarPlaceholder } from "@/components/ui/AvatarPlaceholder";
-import { Button } from "@/components/ui/Button";
 import { createClientBrowser } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -208,27 +207,58 @@ function DropdownLink({ item, onNavigate }: { item: DropdownItem; onNavigate: ()
   );
 }
 
-function NotificationDropdown({
+function NotificationList({
+  notifications
+}: {
+  notifications: NotificationItem[];
+}) {
+  return (
+    <div className="divide-y divide-slate-100">
+      {notifications.map(({ title, text, date, badge, icon: Icon, tone, badgeTone }) => (
+        <div key={title} className="flex gap-3 py-4">
+          <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", notificationIconTones[tone])}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm font-extrabold text-slate-950">{title}</p>
+              <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-extrabold ring-1", notificationBadgeTones[badgeTone])}>{badge}</span>
+            </div>
+            <p className="mt-1 text-sm leading-5 text-slate-500">{text}</p>
+            <p className="mt-2 text-xs font-semibold text-slate-400">{date}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function NotificationPanel({
   variant,
   footerHref,
-  onNavigate
+  onNavigate,
+  mobile = false
 }: {
   variant: "saver" | "admin";
   footerHref: string;
   onNavigate: () => void;
+  mobile?: boolean;
 }) {
   const isAdmin = variant === "admin";
   const notifications = isAdmin ? adminNotifications : saverNotifications;
+  const title = isAdmin ? "Alertas administrativas" : "Notificaciones";
+  const subtitle = isAdmin ? "3 novedades recientes" : "2 sin leer";
+  const footerLabel = isAdmin ? "Ver auditoría" : "Ver todas las notificaciones";
 
   return (
     <div
       role="menu"
-      className="absolute right-0 top-[calc(100%+12px)] z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border border-[#E2E8F0] bg-white p-3 shadow-[0_18px_45px_rgba(15,23,42,0.12)]"
+      className="absolute right-0 top-[calc(100%+12px)] z-50 hidden w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border border-[#E2E8F0] bg-white p-3 shadow-[0_18px_45px_rgba(15,23,42,0.12)] lg:block"
     >
       <div className="flex items-start justify-between gap-4 rounded-xl bg-slate-50 p-4">
         <div>
-          <p className="text-base font-extrabold text-slate-950">{isAdmin ? "Alertas administrativas" : "Notificaciones"}</p>
-          <p className="mt-1 text-xs font-semibold text-slate-500">{isAdmin ? "3 novedades recientes" : "2 sin leer"}</p>
+          <p className="text-base font-extrabold text-slate-950">{title}</p>
+          <p className="mt-1 text-xs font-semibold text-slate-500">{subtitle}</p>
         </div>
         {!isAdmin ? (
           <button type="button" className="rounded-full bg-white px-3 py-1.5 text-xs font-extrabold text-[#004AAD] ring-1 ring-blue-100">
@@ -237,22 +267,8 @@ function NotificationDropdown({
         ) : null}
       </div>
 
-      <div className="mt-2 divide-y divide-slate-100">
-        {notifications.map(({ title, text, date, badge, icon: Icon, tone, badgeTone }) => (
-          <div key={title} className="flex gap-3 py-4">
-            <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", notificationIconTones[tone])}>
-              <Icon className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-sm font-extrabold text-slate-950">{title}</p>
-                <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-extrabold ring-1", notificationBadgeTones[badgeTone])}>{badge}</span>
-              </div>
-              <p className="mt-1 text-sm leading-5 text-slate-500">{text}</p>
-              <p className="mt-2 text-xs font-semibold text-slate-400">{date}</p>
-            </div>
-          </div>
-        ))}
+      <div className="mt-2">
+        <NotificationList notifications={notifications} />
       </div>
 
       <Link
@@ -260,9 +276,108 @@ function NotificationDropdown({
         onClick={onNavigate}
         className="mt-2 flex w-full items-center justify-center rounded-xl bg-blue-50 px-4 py-3 text-sm font-extrabold text-[#004AAD] transition hover:bg-blue-100"
       >
-        {isAdmin ? "Ver auditoría" : "Ver todas las notificaciones"}
+        {footerLabel}
       </Link>
     </div>
+  );
+}
+
+function NotificationSheet({
+  variant,
+  footerHref,
+  onNavigate,
+  onClose
+}: {
+  variant: "saver" | "admin";
+  footerHref: string;
+  onNavigate: () => void;
+  onClose: () => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+  const isAdmin = variant === "admin";
+  const notifications = isAdmin ? adminNotifications : saverNotifications;
+  const title = isAdmin ? "Alertas administrativas" : "Notificaciones";
+  const subtitle = isAdmin ? "3 novedades recientes" : "2 sin leer";
+  const footerLabel = isAdmin ? "Ver auditoría" : "Ver todas las notificaciones";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [mounted, onClose]);
+
+  if (!mounted) {
+    return null;
+  }
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[80] lg:hidden"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px]" />
+      <div className="relative flex h-full items-end justify-center px-3 pb-[calc(5.75rem+env(safe-area-inset-bottom))] pt-3">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+          className="flex max-h-[70vh] w-[min(430px,calc(100vw-24px))] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.34)]"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-4 py-4">
+            <div>
+              <p className="text-base font-extrabold text-slate-950">{title}</p>
+              <p className="mt-1 text-xs font-semibold text-slate-500">{subtitle}</p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-200"
+            >
+              Cerrar
+            </button>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-4">
+            <NotificationList notifications={notifications} />
+          </div>
+
+          <div className="border-t border-slate-100 p-4">
+            <Link
+              href={footerHref}
+              onClick={() => {
+                onNavigate();
+                onClose();
+              }}
+              className="flex w-full items-center justify-center rounded-xl bg-blue-50 px-4 py-3 text-sm font-extrabold text-[#004AAD] transition hover:bg-blue-100"
+            >
+              {footerLabel}
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -277,6 +392,8 @@ export function Topbar({
 }: TopbarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationsMenuRef = useRef<HTMLDivElement | null>(null);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
   const resolvedTipoPortal = tipoPortal ?? (variant === "admin" ? "admin" : "ahorrador");
   const resolvedPerfilHref = perfilHref ?? (variant === "admin" ? "/admin/dashboard" : "/ahorrador/perfil");
   const resolvedNotificacionesHref = notificacionesHref ?? (variant === "admin" ? "/admin/auditoria" : "/ahorrador/notificaciones");
@@ -287,13 +404,46 @@ export function Topbar({
     cerrarSesionHref
   });
 
+  useEffect(() => {
+    if (!userMenuOpen && !notificationsOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      const clickedInsideNotifications = notificationsMenuRef.current?.contains(target ?? null) ?? false;
+      const clickedInsideUserMenu = userMenuRef.current?.contains(target ?? null) ?? false;
+
+      if (clickedInsideNotifications || clickedInsideUserMenu) {
+        return;
+      }
+
+      setNotificationsOpen(false);
+      setUserMenuOpen(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      setNotificationsOpen(false);
+      setUserMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [notificationsOpen, userMenuOpen]);
+
   return (
-    <header className="sticky top-0 z-20 h-auto border-b border-slate-200 bg-white/95 px-4 py-4 backdrop-blur lg:h-[88px] lg:px-8">
+    <header className="sticky top-0 z-20 h-auto border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:h-[88px] lg:px-8 lg:py-4">
       <div className="flex h-full min-w-0 items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-          <Button variant="ghost" className="h-11 w-11 px-0 lg:hidden" aria-label="Abrir menu">
-            <Menu className="h-5 w-5" />
-          </Button>
           <div className="hidden w-full max-w-xl items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 md:flex">
             <Search className="mr-3 h-4 w-4 text-slate-400" />
             <span className="text-sm text-slate-400">{variant === "admin" ? "Buscar en FONFAMPER..." : "Buscar en Fonfamper..."}</span>
@@ -304,8 +454,8 @@ export function Topbar({
           </div>
         </div>
 
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <div className="relative">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <div ref={notificationsMenuRef} className="relative">
             <button
               type="button"
               aria-label="Notificaciones"
@@ -315,22 +465,30 @@ export function Topbar({
                 setNotificationsOpen((current) => !current);
                 setUserMenuOpen(false);
               }}
-              className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl bg-transparent px-0 text-slate-600 transition hover:bg-slate-100"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 sm:h-11 sm:w-11 sm:rounded-xl sm:bg-transparent sm:ring-0"
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-[#0A5FD8] ring-2 ring-white" />
+              <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-[#0A5FD8] ring-2 ring-white sm:right-2.5 sm:top-2.5" />
             </button>
 
             {notificationsOpen ? (
-              <NotificationDropdown
-                variant={variant}
-                footerHref={resolvedNotificacionesHref}
-                onNavigate={() => setNotificationsOpen(false)}
-              />
+              <>
+                <NotificationSheet
+                  variant={variant}
+                  footerHref={resolvedNotificacionesHref}
+                  onNavigate={() => setNotificationsOpen(false)}
+                  onClose={() => setNotificationsOpen(false)}
+                />
+                <NotificationPanel
+                  variant={variant}
+                  footerHref={resolvedNotificacionesHref}
+                  onNavigate={() => setNotificationsOpen(false)}
+                />
+              </>
             ) : null}
           </div>
 
-          <div className="relative">
+          <div ref={userMenuRef} className="relative">
             <button
               type="button"
               aria-haspopup="menu"
@@ -358,7 +516,7 @@ export function Topbar({
                 setUserMenuOpen((current) => !current);
                 setNotificationsOpen(false);
               }}
-              className="sm:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-slate-200 sm:hidden"
             >
               <AvatarPlaceholder name={user.name} size="sm" />
             </button>

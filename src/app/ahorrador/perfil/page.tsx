@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { InstallAppCard } from "@/components/layout/InstallAppCard";
 import { getDemoAhorradorData } from "@/lib/fonfamper/ahorrador-data";
 import { formatCurrencyCOP, formatDate, formatDateTime } from "@/lib/fonfamper/format";
 import { cn } from "@/lib/utils";
@@ -218,6 +219,8 @@ export default async function SaverProfilePage() {
         </div>
 
         <div className="space-y-6">
+          <InstallAppCard />
+
           <Card className="p-0">
             <div className="px-6 pt-6">
               <h3 className="text-lg font-extrabold text-slate-950">Resumen de seguridad</h3>
