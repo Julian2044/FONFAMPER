@@ -10,8 +10,13 @@ type AdminMovementsPageProps = {
     success?: string;
     error?: string;
     movement_id?: string;
+    profileId?: string | string[];
   };
 };
+
+function getSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+}
 
 function resolveFlashMessage(searchParams?: AdminMovementsPageProps["searchParams"]) {
   if (searchParams?.success === "movement_registered") {
@@ -41,6 +46,7 @@ function resolveFlashMessage(searchParams?: AdminMovementsPageProps["searchParam
 export default async function AdminMovementsPage({ searchParams }: AdminMovementsPageProps) {
   const adminData = await getDemoAdminData();
   const flash = resolveFlashMessage(searchParams);
+  const profileId = getSearchValue(searchParams?.profileId);
 
   return (
     <div className="space-y-8 min-w-0">
@@ -72,7 +78,7 @@ export default async function AdminMovementsPage({ searchParams }: AdminMovement
         </Card>
       ) : null}
 
-      <AdminMovementForm users={adminData.users} />
+      <AdminMovementForm users={adminData.users} initialProfileId={profileId} />
     </div>
   );
 }

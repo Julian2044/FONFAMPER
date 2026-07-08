@@ -11,7 +11,7 @@ import {
   revokeUserAccessAction,
   updateInternalUserAction
 } from "@/app/admin/usuarios/actions";
-import { AdminCreateSaverForm } from "@/components/admin/AdminCreateSaverForm";
+import { AdminCreateSaverForm, clearStoredCreateUserDraft, hasPendingCreateUserSubmit } from "@/components/admin/AdminCreateSaverForm";
 import { MovementSupportModal } from "@/components/finance/MovementSupportModal";
 import { AvatarPlaceholder } from "@/components/ui/AvatarPlaceholder";
 import { Badge } from "@/components/ui/Badge";
@@ -26,6 +26,9 @@ import { cn } from "@/lib/utils";
 
 type AdminUsersClientProps = {
   users: AdminUserData[];
+  createSucceeded?: boolean;
+  createdProfileId?: string;
+  pageError?: string | null;
 };
 
 type UserFilter =
@@ -295,7 +298,7 @@ function MovementSupportButton({ attachment }: { attachment: AdminUserData["rece
   return <MovementSupportModal attachmentId={attachment.id} filename={attachment.originalFilename} />;
 }
 
-export function AdminUsersClient({ users }: AdminUsersClientProps) {
+export function AdminUsersClient({ users, createSucceeded = false, createdProfileId = "", pageError = null }: AdminUsersClientProps) {
   const [selectedUserId, setSelectedUserId] = useState(users.find((user) => user.esAhorrador)?.id ?? users[0]?.id ?? "");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterValue, setFilterValue] = useState<UserFilter>("todos");
@@ -315,6 +318,11 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
     () => visibleUsers.find((user) => user.id === selectedUserId) ?? visibleUsers[0] ?? null,
     [selectedUserId, visibleUsers]
   );
+
+  function closeCreatePanel() {
+    setCreatePanelOpen(false);
+    clearStoredCreateUserDraft();
+  }
 
   useEffect(() => {
     if (visibleUsers.length === 0) {
@@ -336,6 +344,34 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
       setMobileDetailOpen(false);
     }
   }, [selectedUserId, visibleUsers]);
+
+  useEffect(() => {
+    if (!createSucceeded) {
+      return;
+    }
+
+    clearStoredCreateUserDraft();
+    setCreatePanelOpen(false);
+    setSearchTerm("");
+    setFilterValue("todos");
+    setEditPanelOpen(false);
+    setSavingsPanelOpen(false);
+    setInitialBalance("");
+    setInitialBalanceDate(getTodayInputDate());
+
+    if (createdProfileId && users.some((user) => user.id === createdProfileId)) {
+      setSelectedUserId(createdProfileId);
+      setMobileDetailOpen(true);
+    }
+  }, [createSucceeded, createdProfileId, users]);
+
+  useEffect(() => {
+    if (!pageError || createSucceeded || !hasPendingCreateUserSubmit()) {
+      return;
+    }
+
+    setCreatePanelOpen(true);
+  }, [createSucceeded, pageError]);
 
   if (users.length === 0) {
     return (
@@ -366,7 +402,7 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
       {createPanelOpen ? (
         <div className="space-y-3">
           <div className="flex justify-end">
-            <Button type="button" variant="ghost" onClick={() => setCreatePanelOpen(false)}>
+            <Button type="button" variant="ghost" onClick={closeCreatePanel}>
               <X className="h-4 w-4" />
               Cerrar
             </Button>
@@ -551,11 +587,11 @@ export function AdminUsersClient({ users }: AdminUsersClientProps) {
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {selectedUser.account ? (
               <>
-                <Link href="/admin/movimientos" className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0057d9] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#004aad]">
+                <Link href={`/admin/movimientos?profileId=${encodeURIComponent(selectedUser.id)}`} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0057d9] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#004aad]">
                   <PlusCircle className="h-4 w-4" />
                   Registrar movimiento
                 </Link>
-                <Link href="/admin/estados-cuenta" className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#004aad] ring-1 ring-[#0057d9]/25 transition hover:bg-blue-50">
+                <Link href={`/admin/estados-cuenta?profileId=${encodeURIComponent(selectedUser.id)}`} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#004aad] ring-1 ring-[#0057d9]/25 transition hover:bg-blue-50">
                   <FileText className="h-4 w-4" />
                   Generar estado de cuenta
                 </Link>

@@ -1,4 +1,4 @@
-import { FileText, Search } from "lucide-react";
+import { AlertTriangle, FileText, Search } from "lucide-react";
 import { StatementMovementList } from "@/components/finance/StatementMovementList";
 import { StatementPdfActions } from "@/components/finance/StatementPdfActions";
 import { Button } from "@/components/ui/Button";
@@ -30,15 +30,23 @@ function emptyStatementResult(): StatementResult {
 }
 
 export default async function AdminStatementsPage({ searchParams }: AdminStatementsPageProps) {
-  const profileId = getSearchValue(searchParams?.profileId);
+  const requestedProfileId = getSearchValue(searchParams?.profileId);
   const startDate = getSearchValue(searchParams?.startDate);
   const endDate = getSearchValue(searchParams?.endDate);
-  const hasFilters = Boolean(profileId || startDate || endDate);
 
-  const [profilesResult, statementResult] = await Promise.all([
-    getAdminStatementProfiles(),
-    hasFilters ? getAdminStatementForProfile(profileId || undefined, { startDate, endDate }) : Promise.resolve(emptyStatementResult())
-  ]);
+  const profilesResult = await getAdminStatementProfiles();
+  const selectedProfile = requestedProfileId
+    ? profilesResult.profiles.find((profile) => profile.id === requestedProfileId) ?? null
+    : null;
+  const profileId = selectedProfile?.id ?? "";
+  const hasDateFilters = Boolean(startDate || endDate);
+  const shouldLoadStatement = Boolean(profileId ? hasDateFilters : startDate || endDate);
+  const statementResult = shouldLoadStatement
+    ? await getAdminStatementForProfile(profileId || undefined, { startDate, endDate })
+    : emptyStatementResult();
+  const profileSelectionNotice = requestedProfileId && !selectedProfile
+    ? "El usuario indicado no existe o no tiene cuenta de ahorro. Selecciona un usuario con cuenta para generar el estado."
+    : null;
   const statement = statementResult.statement;
   const pdfHref = statement
     ? `/api/admin/estados-cuenta/pdf?profileId=${encodeURIComponent(profileId)}&from=${encodeURIComponent(statement.period.startDate)}&to=${encodeURIComponent(statement.period.endDate)}`
@@ -68,6 +76,15 @@ export default async function AdminStatementsPage({ searchParams }: AdminStateme
       {profilesResult.error ? (
         <Card className="border-amber-200 bg-amber-50 text-amber-900">
           <p className="text-sm font-semibold">{profilesResult.error}</p>
+        </Card>
+      ) : null}
+
+      {profileSelectionNotice ? (
+        <Card className="border-amber-200 bg-amber-50 text-amber-900">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+            <p className="text-sm font-semibold">{profileSelectionNotice}</p>
+          </div>
         </Card>
       ) : null}
 
@@ -108,7 +125,7 @@ export default async function AdminStatementsPage({ searchParams }: AdminStateme
         </Card>
       ) : null}
 
-      {hasFilters && statementResult.errors.length > 0 ? (
+      {shouldLoadStatement && statementResult.errors.length > 0 ? (
         <Card className="border-red-200 bg-red-50 text-red-800">
           <div className="flex items-start gap-3">
             <FileText className="mt-0.5 h-5 w-5 shrink-0" />
@@ -121,7 +138,7 @@ export default async function AdminStatementsPage({ searchParams }: AdminStateme
         </Card>
       ) : null}
 
-      {!hasFilters ? (
+      {!shouldLoadStatement ? (
         <Card className="border-blue-100 bg-blue-50 text-[#062B5F]">
           <p className="text-sm font-semibold">Selecciona un usuario con cuenta y un rango de fechas para consultar el estado de cuenta.</p>
         </Card>

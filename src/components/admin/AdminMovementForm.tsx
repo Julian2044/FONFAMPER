@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { CalendarDays, CloudUpload, FileText, Save, UserRound, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, CalendarDays, CloudUpload, FileText, Save, UserRound, X } from "lucide-react";
 import { DataTable } from "@/components/ui/DataTable";
 import { MovementSupportModal } from "@/components/finance/MovementSupportModal";
 import { Badge } from "@/components/ui/Badge";
@@ -17,6 +17,7 @@ import { useFormStatus } from "react-dom";
 
 type AdminMovementFormProps = {
   users: AdminUserData[];
+  initialProfileId?: string;
 };
 
 const movementTypeOptions = [
@@ -79,6 +80,10 @@ function SupportButton({ attachment }: { attachment: AdminUserData["recentMoveme
   return <MovementSupportModal attachmentId={attachment.id} filename={attachment.originalFilename} />;
 }
 
+function canRegisterMovement(user: AdminUserData) {
+  return Boolean(user.account) && user.status.toUpperCase() === "ACTIVO";
+}
+
 function SubmitButton({ disabled = false }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
 
@@ -90,11 +95,20 @@ function SubmitButton({ disabled = false }: { disabled?: boolean }) {
   );
 }
 
-export function AdminMovementForm({ users }: AdminMovementFormProps) {
-  const saverUsers = useMemo(() => users.filter((user) => user.account && user.status.toUpperCase() === "ACTIVO"), [users]);
-  const initialUser = saverUsers[0] ?? null;
+export function AdminMovementForm({ users, initialProfileId = "" }: AdminMovementFormProps) {
+  const saverUsers = useMemo(() => users.filter(canRegisterMovement), [users]);
+  const requestedUser = useMemo(
+    () => (initialProfileId ? users.find((user) => user.id === initialProfileId) ?? null : null),
+    [initialProfileId, users]
+  );
+  const requestedSaverUserId = useMemo(
+    () => (initialProfileId && saverUsers.some((user) => user.id === initialProfileId) ? initialProfileId : ""),
+    [initialProfileId, saverUsers]
+  );
+  const fallbackUserId = saverUsers[0]?.id ?? "";
+  const initialSelectedUserId = requestedSaverUserId || fallbackUserId;
 
-  const [selectedUserId, setSelectedUserId] = useState(initialUser?.id ?? "");
+  const [selectedUserId, setSelectedUserId] = useState(initialSelectedUserId);
   const [movementType, setMovementType] = useState<(typeof movementTypeOptions)[number]["value"]>("APORTE");
   const [movementDate, setMovementDate] = useState(todayInputValue());
   const [amount, setAmount] = useState("");
@@ -105,7 +119,44 @@ export function AdminMovementForm({ users }: AdminMovementFormProps) {
   const [supportError, setSupportError] = useState<string | null>(null);
   const supportInputRef = useRef<HTMLInputElement | null>(null);
 
-  const selectedUser = saverUsers.find((user) => user.id === selectedUserId) ?? initialUser;
+  useEffect(() => {
+    setSelectedUserId((current) => {
+      if (requestedSaverUserId) {
+        return requestedSaverUserId;
+      }
+
+      if (initialProfileId) {
+        return fallbackUserId;
+      }
+
+      if (saverUsers.some((user) => user.id === current)) {
+        return current;
+      }
+
+      return fallbackUserId;
+    });
+  }, [fallbackUserId, initialProfileId, requestedSaverUserId, saverUsers]);
+
+  const selectedUser = saverUsers.find((user) => user.id === selectedUserId) ?? saverUsers[0] ?? null;
+  const requestedProfileNotice = useMemo(() => {
+    if (!initialProfileId || requestedSaverUserId) {
+      return null;
+    }
+
+    if (!requestedUser) {
+      return "El usuario indicado no existe o no está disponible. Se seleccionó el primer usuario con cuenta activa.";
+    }
+
+    if (!requestedUser.account) {
+      return `${requestedUser.fullName} no tiene cuenta de ahorro. Se seleccionó el primer usuario disponible.`;
+    }
+
+    if (requestedUser.status.toUpperCase() !== "ACTIVO") {
+      return `${requestedUser.fullName} no está activo. Se seleccionó el primer usuario disponible.`;
+    }
+
+    return "El usuario indicado no está disponible para registrar movimientos. Se seleccionó el primer usuario con cuenta activa.";
+  }, [initialProfileId, requestedSaverUserId, requestedUser]);
   const currentBalance = selectedUser?.summary.currentBalance ?? 0;
   const initialBalance = selectedUser?.summary.initialBalance ?? 0;
   const parsedAmount = parseAmount(amount);
@@ -154,6 +205,15 @@ export function AdminMovementForm({ users }: AdminMovementFormProps) {
 
   return (
     <div className="space-y-6">
+      {requestedProfileNotice ? (
+        <Card className="border-amber-200 bg-amber-50 text-amber-900">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+            <p className="text-sm font-semibold">{requestedProfileNotice}</p>
+          </div>
+        </Card>
+      ) : null}
+
       <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
         <Card>
           <form action={registerMovementAction} encType="multipart/form-data" className="grid gap-5 md:grid-cols-2">
@@ -297,7 +357,7 @@ export function AdminMovementForm({ users }: AdminMovementFormProps) {
               <Button variant="secondary" className="w-full" type="button">
                 Cancelar
               </Button>
-              <SubmitButton disabled={Boolean(supportError)} />
+              <SubmitButton disabled={Boolean(supportError) || !selectedUser} />
             </div>
           </form>
         </Card>

@@ -77,6 +77,8 @@ function resolveFlashMessage(searchParams?: AdminUsersPageProps["searchParams"])
 export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
   const adminData = await getDemoAdminData();
   const flash = resolveFlashMessage(searchParams);
+  const createSucceeded = searchParams?.success === "user_created";
+  const createdProfileId = createSucceeded ? searchParams?.profile_id ?? "" : "";
 
   return (
     <div className="space-y-8 min-w-0">
@@ -103,7 +105,12 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
         </Card>
       ) : null}
 
-      <AdminUsersClient users={adminData.users} />
+      <AdminUsersClient
+        users={adminData.users}
+        createSucceeded={createSucceeded}
+        createdProfileId={createdProfileId}
+        pageError={searchParams?.error ?? null}
+      />
     </div>
   );
 }
